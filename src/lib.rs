@@ -1,4 +1,5 @@
 mod barrier;
+mod cursor;
 mod producer;
 mod ring_buffer;
 
