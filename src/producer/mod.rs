@@ -75,7 +75,7 @@ impl<'a, E> Iterator for MutBatchIter<'a, E> {
             None
         } else {
             let event_ptr = self.ring_buffer.get(self.current);
-            // Safety: Iterator has exclusive access to event.
+            // SAFE: Iterator has exclusive access to event.
             let event = unsafe { &mut *event_ptr };
             self.current += 1;
             Some(event)
