@@ -1,0 +1,7 @@
+/target
+research/
+.DS_Store
+.env
+*.pem
+*.key
+docs/cookbook/book/
