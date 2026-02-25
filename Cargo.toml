@@ -2,3 +2,8 @@
 name = "calvera"
 version = "0.1.0"
 edition = "2024"
+
+[workspace]
+
+[dependencies]
+crossbeam-utils = "0.8"
