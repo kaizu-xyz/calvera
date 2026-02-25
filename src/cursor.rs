@@ -15,6 +15,14 @@ impl Cursor {
         }
     }
 
+    /// Stores `sequence` to the cursor with `Ordering::Release` semantics.
+    #[inline]
+    pub(crate) fn store(&self, sequence: Sequence) {
+        self.counter.store(sequence, Ordering::Release);
+    }
+
+    /// Retrieves the cursor value with `Ordering::Relaxed` semantics.
+    #[inline]
     pub(crate) fn relaxed_value(&self) -> Sequence {
         self.counter.load(Ordering::Relaxed)
     }

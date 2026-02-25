@@ -1,5 +1,7 @@
 use std::cell::UnsafeCell;
 
+use crate::Sequence;
+
 pub struct RingBuffer<T> {
     /// Heap allocated contiguous slice
     /// of slots with interior mutability.
@@ -19,6 +21,7 @@ impl<T> RingBuffer<T> {
         F: FnMut() -> T,
     {
         if !size.is_power_of_two() {
+            // TODO: err should be handled gracefully
             panic!("Ring buffer size must be power of 2.")
         }
 
@@ -27,5 +30,34 @@ impl<T> RingBuffer<T> {
         let index_mask = (size - 1) as i64;
 
         RingBuffer { slots, index_mask }
+    }
+
+    /// The oldest sequence that the producer would overwrite if it were to publish at the given sequence.
+    #[inline]
+    fn wrap_point(&self, sequence: Sequence) -> Sequence {
+        sequence - self.size()
+    }
+
+    #[inline]
+    pub(crate) fn free_slots(
+        &self,
+        producer: Sequence,
+        highest_read_by_consumers: Sequence,
+    ) -> i64 {
+        let wrap_point = self.wrap_point(producer);
+        highest_read_by_consumers - wrap_point
+    }
+
+    #[inline]
+    pub(crate) fn get(&self, sequence: Sequence) -> *mut T {
+        let index = (sequence & self.index_mask) as usize;
+        // SAFE: Index is within bounds - guaranteed by invariant and index mask.
+        let slot = unsafe { self.slots.get_unchecked(index) };
+        slot.get()
+    }
+
+    #[inline]
+    pub(crate) fn size(&self) -> i64 {
+        self.slots.len() as i64
     }
 }
