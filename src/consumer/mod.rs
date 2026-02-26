@@ -52,6 +52,12 @@ impl Barrier for UniConsumerBarrier {
     }
 }
 
+impl MultiConsumerBarrier {
+    pub(crate) fn new(cursors: Vec<Arc<Cursor>>) -> Self {
+        Self { cursors }
+    }
+}
+
 impl Barrier for MultiConsumerBarrier {
     /// Gets the available `Sequence` of the slowest consumer.
     #[inline]

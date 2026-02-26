@@ -10,6 +10,7 @@ use core_affinity::CoreId;
 use crossbeam_utils::CachePadded;
 use std::sync::{Arc, atomic::AtomicI64};
 
+pub mod multi;
 pub mod uni;
 
 // We use markers instead of enums to avoid runtime check
