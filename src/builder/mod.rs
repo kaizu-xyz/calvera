@@ -1,10 +1,12 @@
-use crate::Sequence;
 use crate::affinity::cpu_has_core_else_panic;
 use crate::barrier::{Barrier, NONE};
+use crate::builder::multi::MPBuilder;
+use crate::builder::uni::UPBuilder;
 use crate::consumer::ConsumerHandle;
 use crate::consumer::managed::{start_processor, start_processor_with_state};
 use crate::consumer::unmanaged::EventPoller;
 use crate::wait_strategies::WaitStrategy;
+use crate::{MultiProducerBarrier, Sequence, UniProducerBarrier};
 use crate::{cursor::Cursor, ring_buffer::RingBuffer};
 use core_affinity::CoreId;
 use crossbeam_utils::CachePadded;
@@ -21,6 +23,104 @@ pub struct NC;
 pub struct SC;
 /// State: Multiple consumers.
 pub struct MC;
+
+/// Build a single producer Disruptor. Use this if you only need to publish events from one thread.
+///
+/// For using a producer see [Producer](crate::producer::Producer).
+///
+/// # Examples
+///
+/// ```
+///# use disruptor::*;
+///#
+/// // The example data entity on the ring buffer.
+/// struct Event {
+///     price: f64
+/// }
+/// let factory = || { Event { price: 0.0 }};
+///# let processor1 = |e: &Event, _, _| {};
+///# let processor2 = |e: &Event, _, _| {};
+///# let processor3 = |e: &Event, _, _| {};
+/// let mut producer = build_uni_producer(8, factory, BusySpin)
+///    .handle_events_with(processor1)
+///    .handle_events_with(processor2)
+///    .and_then()
+///        // `processor3` only reads events after the other two processors are done reading.
+///        .handle_events_with(processor3)
+///    .build();
+///
+/// // Now use the `producer` to publish events.
+/// ```
+pub fn build_uni_producer_unchecked<E, W, F>(
+    size: usize,
+    event_factory: F,
+    wait_strategy: W,
+) -> UPBuilder<NC, E, W, UniProducerBarrier>
+where
+    F: FnMut() -> E,
+    E: 'static + Send + Sync,
+    W: 'static + WaitStrategy,
+{
+    let producer_barrier = Arc::new(UniProducerBarrier::new());
+    let dependent_barrier = Arc::clone(&producer_barrier);
+    UPBuilder::new(
+        size,
+        event_factory,
+        wait_strategy,
+        producer_barrier,
+        dependent_barrier,
+    )
+}
+
+/// Build a multi producer Disruptor. Use this if you need to publish events from many threads.
+///
+/// For using a producer see [Producer](crate::producer::Producer).
+///
+/// # Examples
+///
+/// ```
+///# use disruptor::*;
+///#
+/// // The example data entity on the ring buffer.
+/// struct Event {
+///     price: f64
+/// }
+/// let factory = || { Event { price: 0.0 }};
+///# let processor1 = |e: &Event, _, _| {};
+///# let processor2 = |e: &Event, _, _| {};
+///# let processor3 = |e: &Event, _, _| {};
+/// let mut producer1 = build_multi_producer(64, factory, BusySpin)
+///    .handle_events_with(processor1)
+///    .handle_events_with(processor2)
+///    .and_then()
+///        // `processor3` only reads events after the other two processors are done reading.
+///        .handle_events_with(processor3)
+///    .build();
+///
+/// let mut producer2 = producer1.clone();
+///
+/// // Now two threads can get a Producer each.
+/// ```
+pub fn build_multi_producer_unchecked<E, W, F>(
+    size: usize,
+    event_factory: F,
+    wait_strategy: W,
+) -> MPBuilder<NC, E, W, MultiProducerBarrier>
+where
+    F: FnMut() -> E,
+    E: 'static + Send + Sync,
+    W: 'static + WaitStrategy,
+{
+    let producer_barrier = Arc::new(MultiProducerBarrier::new(size));
+    let dependent_barrier = Arc::clone(&producer_barrier);
+    MPBuilder::new(
+        size,
+        event_factory,
+        wait_strategy,
+        producer_barrier,
+        dependent_barrier,
+    )
+}
 
 pub trait ProcessorSettings<E, W>: Sized {
     fn context(&mut self) -> &mut BuilderContext<E, W>;
