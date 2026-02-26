@@ -76,7 +76,7 @@ fn publish_consume_data_visibility() {
                 // Acquire fence to ensure we see the data written before publish.
                 fence(Ordering::Acquire);
 
-                let ptr = ring_buffer.get(0);
+                let ptr = ring_buffer.get_ref(0);
                 let value = unsafe { &*ptr }.load(Ordering::Relaxed);
                 assert_eq!(value, 42, "Data must be visible after acquire fence");
                 break;
@@ -113,7 +113,7 @@ fn spsc_round_trip() {
             if available >= 0 {
                 fence(Ordering::Acquire);
 
-                let ptr = ring_buffer.get(0);
+                let ptr = ring_buffer.get_ref(0);
                 let value = unsafe { &*ptr }.load(Ordering::Relaxed);
                 assert_eq!(value, 99);
 
@@ -165,5 +165,183 @@ fn barrier_concurrent_read_write() {
 
         // After both threads complete, barrier must be at 1.
         assert_eq!(barrier.get_after(0), 1);
+    });
+}
+
+/// Three threads race CAS on the same cursor, claiming sequences 0, 1, 2.
+/// Each thread retries until it wins a unique sequence.
+/// Verifies lock-free coordination scales beyond 2 threads.
+#[test]
+fn three_way_cursor_contention() {
+    loom::model(|| {
+        let cursor = Arc::new(Cursor::new(NONE));
+
+        let handles: Vec<_> = (0..3)
+            .map(|_| {
+                let c = Arc::clone(&cursor);
+                loom::thread::spawn(move || {
+                    // CAS retry loop — each thread claims the next sequence.
+                    let mut current = c.relaxed_value();
+                    loop {
+                        match c.compare_exchange(current, current + 1) {
+                            Ok(_) => return current + 1, // won this sequence
+                            Err(actual) => current = actual,
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        let mut results: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
+        results.sort();
+
+        // Three threads must claim sequences 0, 1, 2 (in any order).
+        assert_eq!(results, vec![0, 1, 2]);
+        assert_eq!(cursor.relaxed_value(), 2);
+    });
+}
+
+/// Producer publishes 3 events sequentially, consumer reads all 3.
+/// More atomic operations per thread = more interleaving points for loom.
+/// Verifies data visibility across a multi-event sequence.
+#[test]
+fn multi_event_publish_consume() {
+    loom::model(|| {
+        let ring_buffer = Arc::new(RingBuffer::new(4, || AtomicI64::new(-1)));
+        let producer_barrier = Arc::new(UniProducerBarrier::new());
+        let consumer_cursor = Arc::new(Cursor::new(NONE));
+
+        let rb = Arc::clone(&ring_buffer);
+        let pb = Arc::clone(&producer_barrier);
+
+        // Producer: write and publish 3 events.
+        let producer = loom::thread::spawn(move || {
+            for seq in 0..3_i64 {
+                let ptr = rb.get(seq);
+                unsafe { &*ptr }.store(seq * 10, Ordering::Relaxed);
+                pb.publish(seq);
+            }
+        });
+
+        // Consumer: read all 3 events as they become available.
+        let cc = Arc::clone(&consumer_cursor);
+        let rb2 = Arc::clone(&ring_buffer);
+        let pb2 = Arc::clone(&producer_barrier);
+
+        let consumer = loom::thread::spawn(move || {
+            for expected_seq in 0..3_i64 {
+                loop {
+                    let available = pb2.get_after(expected_seq);
+                    if available >= expected_seq {
+                        fence(Ordering::Acquire);
+                        let ptr = rb2.get_ref(expected_seq);
+                        let value = unsafe { &*ptr }.load(Ordering::Relaxed);
+                        assert_eq!(value, expected_seq * 10);
+                        cc.store(expected_seq);
+                        break;
+                    }
+                    loom::thread::yield_now();
+                }
+            }
+        });
+
+        producer.join().unwrap();
+        consumer.join().unwrap();
+        assert_eq!(consumer_cursor.relaxed_value(), 2);
+    });
+}
+
+/// Two consumers read the same published events concurrently.
+/// Producer publishes first (no spin loops needed), then two consumer
+/// threads race to read the same slots. Verifies that concurrent
+/// shared reads through the ring buffer see correct data — the core
+/// SPMC (single-producer, multiple-consumer) pattern.
+#[test]
+fn two_concurrent_consumers() {
+    loom::model(|| {
+        let ring_buffer = Arc::new(RingBuffer::new(2, || AtomicI64::new(-1)));
+        let producer_barrier = Arc::new(UniProducerBarrier::new());
+
+        // Producer publishes on the main thread — no spin needed.
+        let ptr = ring_buffer.get(0);
+        unsafe { &*ptr }.store(42, Ordering::Relaxed);
+        producer_barrier.publish(0);
+
+        let cursor_a = Arc::new(Cursor::new(NONE));
+        let cursor_b = Arc::new(Cursor::new(NONE));
+
+        // Two consumers race to read the same slot concurrently.
+        let mut handles = vec![];
+        for cursor in [Arc::clone(&cursor_a), Arc::clone(&cursor_b)] {
+            let rb = Arc::clone(&ring_buffer);
+            let pb = Arc::clone(&producer_barrier);
+
+            handles.push(loom::thread::spawn(move || {
+                let available = pb.get_after(0);
+                assert!(available >= 0);
+                fence(Ordering::Acquire);
+
+                let ptr = rb.get_ref(0);
+                let value = unsafe { &*ptr }.load(Ordering::Relaxed);
+                assert_eq!(value, 42);
+                cursor.store(0);
+            }));
+        }
+
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        assert_eq!(cursor_a.relaxed_value(), 0);
+        assert_eq!(cursor_b.relaxed_value(), 0);
+    });
+}
+
+/// Producer and consumer run concurrently on a ring buffer of size 2,
+/// publishing and consuming 2 events. The consumer must wait for each
+/// event before reading. Verifies the full SPSC protocol with wrap-around
+/// potential (sequence 1 maps to slot 1, then sequence 2 would wrap to slot 0).
+#[test]
+fn spsc_two_events() {
+    loom::model(|| {
+        let ring_buffer = Arc::new(RingBuffer::new(2, || AtomicI64::new(-1)));
+        let producer_barrier = Arc::new(UniProducerBarrier::new());
+        let consumer_cursor = Arc::new(Cursor::new(NONE));
+
+        let rb = Arc::clone(&ring_buffer);
+        let pb = Arc::clone(&producer_barrier);
+
+        let producer = loom::thread::spawn(move || {
+            for seq in 0..2_i64 {
+                let ptr = rb.get(seq);
+                unsafe { &*ptr }.store(seq * 10, Ordering::Relaxed);
+                pb.publish(seq);
+            }
+        });
+
+        let cc = Arc::clone(&consumer_cursor);
+        let rb2 = Arc::clone(&ring_buffer);
+        let pb2 = Arc::clone(&producer_barrier);
+
+        let consumer = loom::thread::spawn(move || {
+            for expected_seq in 0..2_i64 {
+                loop {
+                    let available = pb2.get_after(expected_seq);
+                    if available >= expected_seq {
+                        fence(Ordering::Acquire);
+                        let ptr = rb2.get_ref(expected_seq);
+                        let value = unsafe { &*ptr }.load(Ordering::Relaxed);
+                        assert_eq!(value, expected_seq * 10);
+                        cc.store(expected_seq);
+                        break;
+                    }
+                    loom::thread::yield_now();
+                }
+            }
+        });
+
+        producer.join().unwrap();
+        consumer.join().unwrap();
+        assert_eq!(consumer_cursor.relaxed_value(), 1);
     });
 }
