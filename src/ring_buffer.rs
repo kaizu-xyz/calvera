@@ -2,6 +2,8 @@ use std::cell::UnsafeCell;
 
 use crate::Sequence;
 
+unsafe impl<T> Sync for RingBuffer<T> {}
+
 pub struct RingBuffer<T> {
     /// Heap allocated contiguous slice
     /// of slots with interior mutability.
