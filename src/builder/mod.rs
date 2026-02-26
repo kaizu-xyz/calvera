@@ -124,6 +124,19 @@ where
 
 pub trait ProcessorSettings<E, W>: Sized {
     fn context(&mut self) -> &mut BuilderContext<E, W>;
+
+    /// Pin processor thread on the core with `id` for the next added event handler.
+    /// Outputs an error on stderr if the thread could not be pinned.
+    fn pin_at_core(mut self, id: usize) -> Self {
+        self.context().pin_at_core(id);
+        self
+    }
+
+    /// Set a name for the processor thread for the next added event handler.
+    fn thread_name(mut self, name: &'static str) -> Self {
+        self.context().thread_named(name);
+        self
+    }
 }
 
 // builder's accumulator — the shared mutable state that gets built up as you chain builder methods, then consumed when you call .build()

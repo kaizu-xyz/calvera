@@ -4,7 +4,7 @@ use crate::{
     Sequence,
     barrier::Barrier,
     builder::{Builder, BuilderContext, MC, NC, ProcessorSettings, SC},
-    consumer::{UniConsumerBarrier, unmanaged::EventPoller},
+    consumer::{MultiConsumerBarrier, UniConsumerBarrier, unmanaged::EventPoller},
     producer::uni::{UniProducer, UniProducerBarrier},
     wait_strategies::WaitStrategy,
 };
@@ -195,5 +195,81 @@ where
             producer_barrier: self.producer_barrier,
             dependent_barrier: self.dependent_barrier,
         }
+    }
+}
+
+impl<E, W, B> UPBuilder<MC, E, W, B>
+where
+    E: 'static + Send + Sync,
+    W: 'static + WaitStrategy,
+    B: 'static + Barrier,
+{
+    /// Get an EventPoller.
+    pub fn event_poller(mut self) -> (EventPoller<E, B>, UPBuilder<MC, E, W, B>) {
+        let event_poller = self.get_event_poller();
+
+        (
+            event_poller,
+            UPBuilder {
+                state: PhantomData,
+                context: self.context,
+                producer_barrier: self.producer_barrier,
+                dependent_barrier: self.dependent_barrier,
+            },
+        )
+    }
+
+    /// Add an event handler.
+    pub fn handle_events_with<EH>(mut self, event_handler: EH) -> UPBuilder<MC, E, W, B>
+    where
+        EH: 'static + Send + FnMut(&E, Sequence, bool),
+    {
+        self.add_event_handler(event_handler);
+        self
+    }
+
+    /// Add an event handler with state.
+    pub fn handle_events_and_state_with<EH, S, IS>(
+        mut self,
+        event_handler: EH,
+        initialize_state: IS,
+    ) -> UPBuilder<MC, E, W, B>
+    where
+        EH: 'static + Send + FnMut(&mut S, &E, Sequence, bool),
+        IS: 'static + Send + FnOnce() -> S,
+    {
+        self.add_event_handler_with_state(event_handler, initialize_state);
+        self
+    }
+
+    /// Complete the (concurrent) consumption of events so far and let new consumers process
+    /// events after all previous consumers have read them.
+    pub fn and_then(mut self) -> UPBuilder<NC, E, W, MultiConsumerBarrier> {
+        let consumer_cursors = self
+            .context()
+            .current_consumer_cursors
+            .replace(vec![])
+            .unwrap();
+        let dependent_barrier = Arc::new(MultiConsumerBarrier::new(consumer_cursors));
+
+        UPBuilder {
+            dependent_barrier,
+            state: PhantomData,
+            context: self.context,
+            producer_barrier: self.producer_barrier,
+        }
+    }
+
+    /// Finish the build and get a [`UniProducer`].
+    pub fn build(mut self) -> UniProducer<E, MultiConsumerBarrier> {
+        let consumer_cursors = self.context().current_consumer_cursors.take().unwrap();
+        let consumer_barrier = MultiConsumerBarrier::new(consumer_cursors);
+        UniProducer::new(
+            self.context.shutdown_at_sequence,
+            self.context.ring_buffer,
+            self.producer_barrier,
+            self.context.consumer_handles,
+            consumer_barrier,
+        )
     }
 }

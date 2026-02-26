@@ -280,7 +280,7 @@ impl MultiProducerBarrier {
         let all_ones = !0_u64;
         let available = (0..i64_needed).map(|_i| AtomicU64::new(all_ones)).collect();
         let index_mask = size - 1;
-        let index_shift = Self::log2(size);
+        let index_shift = usize::ilog2(size) as usize;
 
         Self {
             cursor,
@@ -288,10 +288,6 @@ impl MultiProducerBarrier {
             index_mask,
             index_shift,
         }
-    }
-
-    fn log2(i: usize) -> usize {
-        std::mem::size_of::<usize>() * 8 - (i.leading_zeros() as usize) - 1
     }
 
     #[inline]
@@ -417,5 +413,66 @@ impl ProducerBarrier for MultiProducerBarrier {
     #[inline]
     fn publish(&self, sequence: Sequence) {
         self.publish_with_ordering(sequence, Ordering::Release);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn initial_available_sequence_number() {
+        let barrier = MultiProducerBarrier::new(64);
+
+        assert_eq!(barrier.get_after(0), -1);
+    }
+
+    #[test]
+    fn publication_of_single_event_for_small_barrier() {
+        let barrier = MultiProducerBarrier::new(64);
+
+        barrier.publish_range_relaxed(0, 1);
+        // Verify published:
+        assert_eq!(barrier.get_after(0), 0);
+    }
+
+    #[test]
+    fn publication_of_range_for_small_barrier() {
+        let barrier = MultiProducerBarrier::new(64);
+
+        barrier.publish_range_relaxed(0, 10);
+        // Verify published:
+        assert_eq!(barrier.get_after(0), 9);
+    }
+
+    #[test]
+    fn publication_of_range_wrapping_ringbuffer_for_small_barrier() {
+        let barrier = MultiProducerBarrier::new(64);
+
+        barrier.publish_range_relaxed(0, 50);
+        // Verify published:
+        assert_eq!(barrier.get_after(0), 49);
+
+        barrier.publish_range_relaxed(50, 50);
+        // Verify published:
+        assert_eq!(barrier.get_after(49), 99);
+    }
+
+    #[test]
+    fn publication_of_range_wrapping_ringbuffer_for_barrier() {
+        let barrier = MultiProducerBarrier::new(128);
+
+        barrier.publish_range_relaxed(0, 100);
+        // Verify published:
+        assert_eq!(barrier.get_after(0), 99);
+        // Verify not published:
+
+        barrier.publish_range_relaxed(100, 100);
+        // Verify published:
+        assert_eq!(barrier.get_after(99), 199);
+
+        barrier.publish_range_relaxed(200, 100);
+        // Verify published:
+        assert_eq!(barrier.get_after(199), 299);
     }
 }
