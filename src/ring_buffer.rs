@@ -58,6 +58,17 @@ impl<T> RingBuffer<T> {
         slot.get()
     }
 
+    /// Read-only access to a slot. Consumers should use this instead of `get()`.
+    /// Under loom, this registers a shared read (via `with()`) rather than an
+    /// exclusive write (via `with_mut()`), allowing multiple concurrent consumers
+    /// to read the same slot without triggering a causality violation.
+    #[inline]
+    pub fn get_ref(&self, sequence: Sequence) -> *const T {
+        let index = (sequence & self.index_mask) as usize;
+        let slot = unsafe { self.slots.get_unchecked(index) };
+        slot.get_ref()
+    }
+
     #[inline]
     pub(crate) fn size(&self) -> i64 {
         self.slots.len() as i64

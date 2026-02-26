@@ -51,7 +51,7 @@ where
                         // Potentiel batch processing.
                         let end_of_batch = available == sequence;
                         // SAFETY: Now, we have (shared) read access to the event at `sequence`.
-                        let event_ptr = ring_buffer.get(sequence);
+                        let event_ptr = ring_buffer.get_ref(sequence);
                         let event = unsafe { &*event_ptr };
                         event_handler(event, sequence, end_of_batch);
                         // Update next sequence to read.
@@ -105,7 +105,7 @@ where
                         // Potentiel batch processing.
                         let end_of_batch = available_sequence == sequence;
                         // SAFETY: Now, we have (shared) read access to the event at `sequence`.
-                        let event_ptr = ring_buffer.get(sequence);
+                        let event_ptr = ring_buffer.get_ref(sequence);
                         let event = unsafe { &*event_ptr };
                         event_handler(&mut state, event, sequence, end_of_batch);
                         // Update next sequence to read.

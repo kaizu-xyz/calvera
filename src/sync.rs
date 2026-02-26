@@ -9,7 +9,24 @@
 
 // ── std path (default) ──────────────────────────────────────────────
 #[cfg(not(loom))]
-pub(crate) use std::cell::UnsafeCell;
+pub(crate) struct UnsafeCell<T>(std::cell::UnsafeCell<T>);
+
+#[cfg(not(loom))]
+impl<T> UnsafeCell<T> {
+    pub(crate) fn new(value: T) -> Self {
+        Self(std::cell::UnsafeCell::new(value))
+    }
+
+    #[inline(always)]
+    pub(crate) fn get(&self) -> *mut T {
+        self.0.get()
+    }
+
+    #[inline(always)]
+    pub(crate) fn get_ref(&self) -> *const T {
+        self.0.get() as *const T
+    }
+}
 #[cfg(not(loom))]
 pub(crate) use std::sync::Arc;
 #[cfg(not(loom))]
@@ -49,6 +66,10 @@ impl<T> UnsafeCell<T> {
 
     pub(crate) fn get(&self) -> *mut T {
         self.0.with_mut(|ptr| ptr)
+    }
+
+    pub(crate) fn get_ref(&self) -> *const T {
+        self.0.with(|ptr| ptr)
     }
 }
 
