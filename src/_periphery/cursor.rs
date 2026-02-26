@@ -40,3 +40,21 @@ impl Cursor {
         self.counter.load(Ordering::Relaxed)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cursor_operations() {
+        let cursor = Cursor::new(-1);
+
+        assert_eq!(cursor.compare_exchange(-1, 0).ok().unwrap(), -1);
+        assert_eq!(cursor.compare_exchange(0, 1).ok().unwrap(), 0);
+        // Simulate other thread having updated the cursor.
+        assert_eq!(cursor.compare_exchange(0, 1).err().unwrap(), 1);
+
+        cursor.store(100);
+        assert_eq!(cursor.relaxed_value(), 100);
+    }
+}
