@@ -1,8 +1,6 @@
-use std::{
-    sync::{
-        Arc,
-        atomic::{AtomicI64, Ordering, fence},
-    },
+use crate::sync::{
+    Arc,
+    atomic::{AtomicI64, Ordering, fence},
     thread,
 };
 

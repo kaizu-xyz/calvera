@@ -1,4 +1,6 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::marker::PhantomData;
+
+use crate::sync::Arc;
 
 use crate::{
     Sequence,

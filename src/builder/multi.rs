@@ -2,7 +2,9 @@
 //!
 //! To get started building a Multi Producer Disruptor, invoke [super::build_multi_producer].
 
-use std::{marker::PhantomData, sync::Arc};
+use std::marker::PhantomData;
+
+use crate::sync::Arc;
 
 use crate::{
     Sequence,

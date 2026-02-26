@@ -10,7 +10,8 @@ use crate::{MultiProducerBarrier, Sequence, UniProducerBarrier};
 use crate::{cursor::Cursor, ring_buffer::RingBuffer};
 use core_affinity::CoreId;
 use crossbeam_utils::CachePadded;
-use std::sync::{Arc, atomic::AtomicI64};
+
+use crate::sync::{Arc, atomic::AtomicI64};
 
 pub mod multi;
 pub mod uni;

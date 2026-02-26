@@ -1,5 +1,6 @@
 use crossbeam_utils::CachePadded;
-use std::sync::{
+
+use crate::sync::{
     Arc,
     atomic::{AtomicI64, Ordering, fence},
 };
@@ -233,7 +234,7 @@ pub struct UniProducerBarrier {
 }
 
 impl UniProducerBarrier {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             cursor: Cursor::new(NONE),
         }

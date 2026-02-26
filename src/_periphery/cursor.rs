@@ -1,15 +1,15 @@
-use std::sync::atomic::{AtomicI64, Ordering};
+use crate::sync::atomic::{AtomicI64, Ordering};
 
 use crossbeam_utils::CachePadded;
 
 use crate::Sequence;
 
-pub(crate) struct Cursor {
+pub struct Cursor {
     counter: CachePadded<AtomicI64>,
 }
 
 impl Cursor {
-    pub(crate) fn new(start: i64) -> Self {
+    pub fn new(start: i64) -> Self {
         Self {
             counter: CachePadded::new(AtomicI64::new(start)),
         }
@@ -23,20 +23,20 @@ impl Cursor {
     /// UniProducer doesn't need this — there's only one producer, so it just
     /// increments `self.sequence` directly. No contention, no CAS.
     #[inline]
-    pub(crate) fn compare_exchange(&self, current: Sequence, next: Sequence) -> Result<i64, i64> {
+    pub fn compare_exchange(&self, current: Sequence, next: Sequence) -> Result<i64, i64> {
         self.counter
             .compare_exchange(current, next, Ordering::AcqRel, Ordering::Relaxed)
     }
 
     /// Stores `sequence` to the cursor with `Ordering::Release` semantics.
     #[inline]
-    pub(crate) fn store(&self, sequence: Sequence) {
+    pub fn store(&self, sequence: Sequence) {
         self.counter.store(sequence, Ordering::Release);
     }
 
     /// Retrieves the cursor value with `Ordering::Relaxed` semantics.
     #[inline]
-    pub(crate) fn relaxed_value(&self) -> Sequence {
+    pub fn relaxed_value(&self) -> Sequence {
         self.counter.load(Ordering::Relaxed)
     }
 }

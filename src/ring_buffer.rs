@@ -1,4 +1,4 @@
-use std::cell::UnsafeCell;
+use crate::sync::UnsafeCell;
 
 use crate::Sequence;
 
@@ -51,7 +51,7 @@ impl<T> RingBuffer<T> {
     }
 
     #[inline]
-    pub(crate) fn get(&self, sequence: Sequence) -> *mut T {
+    pub fn get(&self, sequence: Sequence) -> *mut T {
         let index = (sequence & self.index_mask) as usize;
         // SAFE: Index is within bounds - guaranteed by invariant and index mask.
         let slot = unsafe { self.slots.get_unchecked(index) };

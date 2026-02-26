@@ -1,9 +1,8 @@
-use std::{
-    process,
-    sync::{
-        Arc, Mutex,
-        atomic::{AtomicI64, AtomicU64, Ordering, fence},
-    },
+use std::process;
+
+use crate::sync::{
+    Arc, Mutex,
+    atomic::{AtomicI64, AtomicU64, Ordering, fence},
 };
 
 use crossbeam_utils::CachePadded;

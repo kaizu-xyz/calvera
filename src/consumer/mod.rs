@@ -1,4 +1,4 @@
-use std::{sync::Arc, thread::JoinHandle};
+use crate::sync::{Arc, thread::JoinHandle};
 
 use crate::{Sequence, barrier::Barrier, cursor::Cursor};
 

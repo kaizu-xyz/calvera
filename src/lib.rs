@@ -6,6 +6,7 @@ mod errors;
 mod periphery;
 mod producer;
 mod ring_buffer;
+mod sync;
 
 use periphery::affinity;
 use periphery::barrier;
@@ -25,6 +26,14 @@ pub use crate::producer::{
     uni::{UniProducer, UniProducerBarrier},
 };
 pub use crate::wait_strategies::{BusySpin, BusySpinWithSpinLoopHint};
+
+#[cfg(loom)]
+pub mod loom_api {
+    pub use crate::barrier::{Barrier, NONE};
+    pub use crate::cursor::Cursor;
+    pub use crate::producer::ProducerBarrier;
+    pub use crate::ring_buffer::RingBuffer;
+}
 
 #[cfg(test)]
 mod tests {
