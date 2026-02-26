@@ -12,3 +12,14 @@ pub struct ERingBufferFull;
 #[derive(Debug, Error, PartialEq)]
 #[error("Missing free slots in Ring Buffer: {0}")]
 pub struct EMissingFreeSlots(pub u64);
+
+/// Error types that can occur if polling is unsuccessful.
+#[derive(Debug, Error, PartialEq)]
+pub enum EPolling {
+    /// Indicates that there are no events available to process.
+    #[error("No available events.")]
+    NoEvents,
+    /// Indicates that the Disruptor has been shut down.
+    #[error("Disruptor is shut down.")]
+    Shutdown,
+}
