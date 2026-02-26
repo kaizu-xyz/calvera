@@ -92,20 +92,20 @@ where
     /// # Errors
     ///
     /// This method returns an error if:
-    /// 1. No events are available: [`Polling::NoEvents`]
-    /// 2. The Disruptor is shut down: [`Polling::Shutdown`]
+    /// 1. No events are available: [`EPolling::NoEvents`]
+    /// 2. The Disruptor is shut down: [`EPolling::Shutdown`]
     ///
     /// # Examples
     ///
     /// ```
-    ///# use disruptor::*;
+    ///# use calvera::*;
     ///#
     ///# #[derive(Debug)]
     ///# struct Event {
     ///#     price: f64
     ///# }
     ///# let factory = || Event { price: 0.0 };
-    ///# let builder = build_single_producer(8, factory, BusySpin);
+    ///# let builder = build_uni_producer_unchecked(8, factory, BusySpin);
     ///# let (mut event_poller, builder) = builder.event_poller();
     ///# let mut producer = builder.build();
     ///# producer.publish(|e| { e.price = 42.0; });
@@ -116,8 +116,8 @@ where
     ///             // ...
     ///         }
     ///     },
-    ///     Err(Polling::NoEvents) => { /* ... */ },
-    ///     Err(Polling::Shutdown) => { /* ... */ },
+    ///     Err(EPolling::NoEvents) => { /* ... */ },
+    ///     Err(EPolling::Shutdown) => { /* ... */ },
     /// };
     /// ```
     pub fn poll(&mut self) -> Result<EventGuard<'_, E, B>, EPolling> {
@@ -129,19 +129,19 @@ where
     /// This method behaves like [`EventPoller::poll`], but caps the number of events yielded by the returned
     /// [`EventGuard`]. Fewer events may be yielded if less are available at the time of polling.
     ///
-    /// Note: A `limit` of zero returns an [`EventGuard`] that yields no events (and not an [Polling::NoEvents] error).
+    /// Note: A `limit` of zero returns an [`EventGuard`] that yields no events (and not an [EPolling::NoEvents] error).
     ///
     /// # Examples
     ///
     /// ```
-    ///# use disruptor::*;
+    ///# use calvera::*;
     ///#
     ///# #[derive(Debug)]
     ///# struct Event {
     ///#     price: f64
     ///# }
     ///# let factory = || Event { price: 0.0 };
-    ///# let builder = build_single_producer(8, factory, BusySpin);
+    ///# let builder = build_uni_producer_unchecked(8, factory, BusySpin);
     ///# let (mut event_poller, builder) = builder.event_poller();
     ///# let mut producer = builder.build();
     ///# producer.publish(|e| { e.price = 42.0; });
@@ -153,8 +153,8 @@ where
     ///             // ...
     ///         }
     ///     },
-    ///     Err(Polling::NoEvents) => { /* ... */ },
-    ///     Err(Polling::Shutdown) => { /* ... */ },
+    ///     Err(EPolling::NoEvents) => { /* ... */ },
+    ///     Err(EPolling::Shutdown) => { /* ... */ },
     /// };
     /// ```
     pub fn poll_take(&mut self, limit: u64) -> Result<EventGuard<'_, E, B>, EPolling> {

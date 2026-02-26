@@ -32,7 +32,7 @@ pub struct MC;
 /// # Examples
 ///
 /// ```
-///# use disruptor::*;
+///# use calvera::*;
 ///#
 /// // The example data entity on the ring buffer.
 /// struct Event {
@@ -42,7 +42,7 @@ pub struct MC;
 ///# let processor1 = |e: &Event, _, _| {};
 ///# let processor2 = |e: &Event, _, _| {};
 ///# let processor3 = |e: &Event, _, _| {};
-/// let mut producer = build_uni_producer(8, factory, BusySpin)
+/// let mut producer = build_uni_producer_unchecked(8, factory, BusySpin)
 ///    .handle_events_with(processor1)
 ///    .handle_events_with(processor2)
 ///    .and_then()
@@ -80,7 +80,7 @@ where
 /// # Examples
 ///
 /// ```
-///# use disruptor::*;
+///# use calvera::*;
 ///#
 /// // The example data entity on the ring buffer.
 /// struct Event {
@@ -90,7 +90,7 @@ where
 ///# let processor1 = |e: &Event, _, _| {};
 ///# let processor2 = |e: &Event, _, _| {};
 ///# let processor3 = |e: &Event, _, _| {};
-/// let mut producer1 = build_multi_producer(64, factory, BusySpin)
+/// let mut producer1 = build_multi_producer_unchecked(64, factory, BusySpin)
 ///    .handle_events_with(processor1)
 ///    .handle_events_with(processor2)
 ///    .and_then()

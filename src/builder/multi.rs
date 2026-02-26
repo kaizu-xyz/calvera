@@ -1,6 +1,6 @@
 //! Module for structs for building a Multi Producer Disruptor in a type safe way.
 //!
-//! To get started building a Multi Producer Disruptor, invoke [super::build_multi_producer].
+//! To get started building a Multi Producer Disruptor, invoke [super::build_multi_producer_unchecked].
 
 use std::marker::PhantomData;
 

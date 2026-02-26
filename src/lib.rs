@@ -21,7 +21,9 @@ pub use crate::builder::{
 pub use crate::consumer::unmanaged::{EventGuard, EventPoller};
 pub use crate::consumer::{MultiConsumerBarrier, UniConsumerBarrier};
 pub use crate::disruptor::Disruptor;
+pub use crate::errors::EPolling;
 pub use crate::producer::{
+    Producer,
     multi::{MultiProducer, MultiProducerBarrier},
     uni::{UniProducer, UniProducerBarrier},
 };
