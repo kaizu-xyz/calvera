@@ -7,7 +7,7 @@ use std::sync::{
 use crate::{
     Sequence,
     barrier::{Barrier, NONE},
-    consumer::Consumer,
+    consumer::ConsumerHandle,
     cursor::Cursor,
     errors::{EMissingFreeSlots, ERingBufferFull},
     producer::{MutBatchIter, Producer, ProducerBarrier},
@@ -30,7 +30,7 @@ pub struct UniProducer<E, C> {
     /// When the producer drops, it joins all consumer threads to ensure clean shutdown.
     ///
     /// The producer owns the entire disruptor lifecycle.
-    consumers: Vec<Consumer>,
+    consumer_handles: Vec<ConsumerHandle>,
     /// The producer reads this to check the slowest consumer's position.
     /// It's generic over it since it can be single or multi consumer.
     ///
@@ -113,7 +113,7 @@ impl<E, C> Drop for UniProducer<E, C> {
     fn drop(&mut self) {
         self.shutdown_at_sequence
             .store(self.sequence, Ordering::Relaxed);
-        self.consumers.iter_mut().for_each(|c| c.join());
+        self.consumer_handles.iter_mut().for_each(|c| c.join());
     }
 }
 
@@ -125,7 +125,7 @@ where
         shutdown_at_sequence: Arc<CachePadded<AtomicI64>>,
         ring_buffer: Arc<RingBuffer<E>>,
         producer_barrier: Arc<UniProducerBarrier>,
-        consumers: Vec<Consumer>,
+        consumer_handles: Vec<ConsumerHandle>,
         consumer_barrier: C,
     ) -> Self {
         let sequence_clear_of_consumers = ring_buffer.size() - 1;
@@ -133,7 +133,7 @@ where
             shutdown_at_sequence,
             ring_buffer,
             producer_barrier,
-            consumers,
+            consumer_handles,
             consumer_barrier,
             sequence: 0,
             sequence_clear_of_consumers,
