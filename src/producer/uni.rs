@@ -1,7 +1,7 @@
 use crossbeam_utils::CachePadded;
 use std::sync::{
     Arc,
-    atomic::{AtomicI64, Ordering},
+    atomic::{AtomicI64, Ordering, fence},
 };
 
 use crate::{
@@ -169,6 +169,12 @@ where
             if free_slots < n {
                 return Err(EMissingFreeSlots((n - free_slots) as u64));
             }
+
+            fence(Ordering::Acquire);
+
+            // We can now continue until we get right behind the slowest consumer's current
+            // position without checking where it actually is.
+            self.sequence_clear_of_consumers = last_published + free_slots;
         }
 
         Ok(n_next)
