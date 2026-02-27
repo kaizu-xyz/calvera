@@ -1,0 +1,654 @@
+     Running benches/counters.rs (target/release/deps/counters-7669edf4dc4f154b)
+Gnuplot not found, using plotters backend
+Benchmarking crossbeam_spsc: Warming up for 3.0000 s
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 19.6s, or reduce sample count to 20.
+crossbeam_spsc          time:   [203.06 ms 206.88 ms 210.68 ms]
+                        change: [+5.9251% +10.487% +15.308%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 5 outliers among 100 measurements (5.00%)
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+
+disruptor_spsc          time:   [19.021 ms 19.036 ms 19.052 ms]
+                        change: [−29.583% −29.520% −29.457%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 18 outliers among 100 measurements (18.00%)
+  9 (9.00%) low severe
+  9 (9.00%) high severe
+
+Benchmarking crossbeam_mpsc: Warming up for 3.0000 s
+Warning: Unable to complete 100 samples in 5.0s. You may wish to increase target time to 35.2s, or reduce sample count to 10.
+crossbeam_mpsc          time:   [360.48 ms 363.29 ms 366.07 ms]
+                        change: [−23.227% −21.671% −20.022%] (p = 0.00 < 0.05)
+                        Performance has improved.
+
+disruptor_mpsc          time:   [46.036 ms 46.044 ms 46.055 ms]
+                        change: [−38.376% −36.362% −34.394%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  4 (4.00%) high severe
+
+     Running benches/mpsc.rs (target/release/deps/mpsc-7f49d626ed12af02)
+Gnuplot not found, using plotters backend
+mpsc/base/1             time:   [158.83 ns 158.93 ns 159.04 ns]
+                        thrpt:  [6.2878 Melem/s 6.2919 Melem/s 6.2962 Melem/s]
+                 change:
+                        time:   [+10.942% +12.015% +13.028%] (p = 0.00 < 0.05)
+                        thrpt:  [−11.527% −10.726% −9.8625%]
+                        Performance has regressed.
+Found 25 outliers among 100 measurements (25.00%)
+  9 (9.00%) low severe
+  2 (2.00%) low mild
+  5 (5.00%) high mild
+  9 (9.00%) high severe
+mpsc/Crossbeam/burst: 1, pause: 0 ms
+                        time:   [282.26 ns 282.43 ns 282.72 ns]
+                        thrpt:  [3.5371 Melem/s 3.5407 Melem/s 3.5429 Melem/s]
+                 change:
+                        time:   [−30.376% −24.346% −18.252%] (p = 0.00 < 0.05)
+                        thrpt:  [+22.326% +32.180% +43.628%]
+                        Performance has improved.
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) high mild
+  4 (4.00%) high severe
+mpsc/disruptor/burst: 1, pause: 0 ms
+                        time:   [242.10 ns 242.20 ns 242.29 ns]
+                        thrpt:  [4.1272 Melem/s 4.1288 Melem/s 4.1305 Melem/s]
+                 change:
+                        time:   [−12.184% −9.4632% −7.3211%] (p = 0.00 < 0.05)
+                        thrpt:  [+7.8994% +10.452% +13.875%]
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high severe
+mpsc/Crossbeam/burst: 1, pause: 1 ms
+                        time:   [286.07 ns 286.29 ns 286.53 ns]
+                        thrpt:  [3.4900 Melem/s 3.4930 Melem/s 3.4957 Melem/s]
+                 change:
+                        time:   [−5.0177% −3.9030% −3.0255%] (p = 0.00 < 0.05)
+                        thrpt:  [+3.1198% +4.0615% +5.2828%]
+                        Performance has improved.
+Found 11 outliers among 100 measurements (11.00%)
+  5 (5.00%) low mild
+  1 (1.00%) high mild
+  5 (5.00%) high severe
+mpsc/disruptor/burst: 1, pause: 1 ms
+                        time:   [249.40 ns 249.84 ns 250.43 ns]
+                        thrpt:  [3.9932 Melem/s 4.0026 Melem/s 4.0095 Melem/s]
+                 change:
+                        time:   [−11.734% −10.392% −9.2200%] (p = 0.00 < 0.05)
+                        thrpt:  [+10.156% +11.597% +13.293%]
+                        Performance has improved.
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
+mpsc/Crossbeam/burst: 1, pause: 10 ms
+                        time:   [285.01 ns 285.24 ns 285.45 ns]
+                        thrpt:  [3.5033 Melem/s 3.5058 Melem/s 3.5086 Melem/s]
+                 change:
+                        time:   [−2.7606% −1.9774% −1.4797%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.5020% +2.0173% +2.8390%]
+                        Performance has improved.
+Found 17 outliers among 100 measurements (17.00%)
+  14 (14.00%) low severe
+  1 (1.00%) low mild
+  2 (2.00%) high severe
+mpsc/disruptor/burst: 1, pause: 10 ms
+                        time:   [250.93 ns 251.63 ns 252.46 ns]
+                        thrpt:  [3.9609 Melem/s 3.9741 Melem/s 3.9852 Melem/s]
+                 change:
+                        time:   [−3.5138% −2.7509% −2.1066%] (p = 0.00 < 0.05)
+                        thrpt:  [+2.1519% +2.8287% +3.6418%]
+                        Performance has improved.
+mpsc/base/10            time:   [170.40 ns 171.06 ns 171.84 ns]
+                        thrpt:  [58.194 Melem/s 58.459 Melem/s 58.685 Melem/s]
+                 change:
+                        time:   [+0.5295% +2.1577% +3.4045%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.2925% −2.1122% −0.5267%]
+                        Change within noise threshold.
+mpsc/Crossbeam/burst: 10, pause: 0 ms
+                        time:   [1.1119 µs 1.1144 µs 1.1167 µs]
+                        thrpt:  [8.9553 Melem/s 8.9733 Melem/s 8.9933 Melem/s]
+                 change:
+                        time:   [−11.703% −11.042% −10.380%] (p = 0.00 < 0.05)
+                        thrpt:  [+11.583% +12.412% +13.254%]
+                        Performance has improved.
+mpsc/disruptor/burst: 10, pause: 0 ms
+                        time:   [345.66 ns 346.27 ns 346.81 ns]
+                        thrpt:  [28.835 Melem/s 28.879 Melem/s 28.931 Melem/s]
+                 change:
+                        time:   [−0.9826% +0.3477% +1.4816%] (p = 0.59 > 0.05)
+                        thrpt:  [−1.4600% −0.3465% +0.9924%]
+                        No change in performance detected.
+mpsc/Crossbeam/burst: 10, pause: 1 ms
+                        time:   [1.2161 µs 1.2294 µs 1.2398 µs]
+                        thrpt:  [8.0656 Melem/s 8.1344 Melem/s 8.2233 Melem/s]
+                 change:
+                        time:   [−8.1710% −4.3901% −1.2533%] (p = 0.01 < 0.05)
+                        thrpt:  [+1.2692% +4.5917% +8.8981%]
+                        Performance has improved.
+Found 11 outliers among 100 measurements (11.00%)
+  3 (3.00%) low severe
+  4 (4.00%) low mild
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+mpsc/disruptor/burst: 10, pause: 1 ms
+                        time:   [327.61 ns 328.28 ns 328.90 ns]
+                        thrpt:  [30.405 Melem/s 30.462 Melem/s 30.524 Melem/s]
+                 change:
+                        time:   [−10.741% −8.2980% −6.1280%] (p = 0.00 < 0.05)
+                        thrpt:  [+6.5280% +9.0489% +12.034%]
+                        Performance has improved.
+Found 23 outliers among 100 measurements (23.00%)
+  23 (23.00%) low mild
+mpsc/Crossbeam/burst: 10, pause: 10 ms
+                        time:   [1.0756 µs 1.0764 µs 1.0773 µs]
+                        thrpt:  [9.2821 Melem/s 9.2900 Melem/s 9.2971 Melem/s]
+                 change:
+                        time:   [−28.709% −23.917% −18.984%] (p = 0.00 < 0.05)
+                        thrpt:  [+23.433% +31.436% +40.270%]
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3.00%)
+  1 (1.00%) low severe
+  1 (1.00%) low mild
+  1 (1.00%) high mild
+mpsc/disruptor/burst: 10, pause: 10 ms
+                        time:   [330.29 ns 330.60 ns 330.90 ns]
+                        thrpt:  [30.220 Melem/s 30.248 Melem/s 30.277 Melem/s]
+                 change:
+                        time:   [−6.2708% −4.9207% −3.8457%] (p = 0.00 < 0.05)
+                        thrpt:  [+3.9996% +5.1753% +6.6903%]
+                        Performance has improved.
+Found 4 outliers among 100 measurements (4.00%)
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+  1 (1.00%) high severe
+mpsc/base/100           time:   [1.1216 µs 1.1229 µs 1.1244 µs]
+                        thrpt:  [88.933 Melem/s 89.052 Melem/s 89.162 Melem/s]
+                 change:
+                        time:   [−1.6455% −0.7590% +0.0768%] (p = 0.09 > 0.05)
+                        thrpt:  [−0.0768% +0.7648% +1.6730%]
+                        No change in performance detected.
+Found 13 outliers among 100 measurements (13.00%)
+  5 (5.00%) low severe
+  2 (2.00%) low mild
+  4 (4.00%) high mild
+  2 (2.00%) high severe
+mpsc/Crossbeam/burst: 100, pause: 0 ms
+                        time:   [4.6092 µs 4.6129 µs 4.6180 µs]
+                        thrpt:  [21.654 Melem/s 21.678 Melem/s 21.696 Melem/s]
+                 change:
+                        time:   [−18.014% −13.733% −9.6585%] (p = 0.00 < 0.05)
+                        thrpt:  [+10.691% +15.920% +21.973%]
+                        Performance has improved.
+mpsc/disruptor/burst: 100, pause: 0 ms
+                        time:   [1.0758 µs 1.0822 µs 1.0884 µs]
+                        thrpt:  [91.878 Melem/s 92.403 Melem/s 92.956 Melem/s]
+                 change:
+                        time:   [−5.7295% −3.6111% −1.8073%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.8406% +3.7464% +6.0777%]
+                        Performance has improved.
+Found 3 outliers among 100 measurements (3.00%)
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+mpsc/Crossbeam/burst: 100, pause: 1 ms
+                        time:   [4.5768 µs 4.5844 µs 4.5911 µs]
+                        thrpt:  [21.781 Melem/s 21.813 Melem/s 21.849 Melem/s]
+                 change:
+                        time:   [−12.378% −10.323% −8.6662%] (p = 0.00 < 0.05)
+                        thrpt:  [+9.4885% +11.511% +14.127%]
+                        Performance has improved.
+mpsc/disruptor/burst: 100, pause: 1 ms
+                        time:   [1.0507 µs 1.0561 µs 1.0613 µs]
+                        thrpt:  [94.226 Melem/s 94.687 Melem/s 95.179 Melem/s]
+                 change:
+                        time:   [−23.659% −19.777% −16.097%] (p = 0.00 < 0.05)
+                        thrpt:  [+19.185% +24.653% +30.991%]
+                        Performance has improved.
+Found 9 outliers among 100 measurements (9.00%)
+  7 (7.00%) low mild
+  2 (2.00%) high mild
+mpsc/Crossbeam/burst: 100, pause: 10 ms
+                        time:   [4.6292 µs 4.6522 µs 4.6721 µs]
+                        thrpt:  [21.404 Melem/s 21.495 Melem/s 21.602 Melem/s]
+                 change:
+                        time:   [−16.481% −13.439% −10.753%] (p = 0.00 < 0.05)
+                        thrpt:  [+12.049% +15.525% +19.733%]
+                        Performance has improved.
+mpsc/disruptor/burst: 100, pause: 10 ms
+                        time:   [1.0649 µs 1.0696 µs 1.0742 µs]
+                        thrpt:  [93.092 Melem/s 93.496 Melem/s 93.908 Melem/s]
+                 change:
+                        time:   [−11.838% −9.4760% −7.2247%] (p = 0.00 < 0.05)
+                        thrpt:  [+7.7874% +10.468% +13.428%]
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) low mild
+  4 (4.00%) high mild
+
+     Running benches/poller.rs (target/release/deps/poller-51ea89a5aab07393)
+Gnuplot not found, using plotters backend
+spsc/base/1             time:   [702.21 ps 703.26 ps 704.94 ps]
+                        thrpt:  [1.4186 Gelem/s 1.4219 Gelem/s 1.4241 Gelem/s]
+                 change:
+                        time:   [−1.8136% −1.4333% −0.9667%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.9761% +1.4541% +1.8471%]
+                        Change within noise threshold.
+Found 13 outliers among 100 measurements (13.00%)
+  3 (3.00%) high mild
+  10 (10.00%) high severe
+spsc/polling/burst: 1, pause: 0 ms
+                        time:   [17.474 ns 17.511 ns 17.553 ns]
+                        thrpt:  [56.971 Melem/s 57.106 Melem/s 57.228 Melem/s]
+                 change:
+                        time:   [+2.5391% +3.1684% +3.7883%] (p = 0.00 < 0.05)
+                        thrpt:  [−3.6500% −3.0711% −2.4763%]
+                        Performance has regressed.
+Found 15 outliers among 100 measurements (15.00%)
+  4 (4.00%) low mild
+  6 (6.00%) high mild
+  5 (5.00%) high severe
+spsc/processing/burst: 1, pause: 0 ms
+                        time:   [16.057 ns 16.120 ns 16.182 ns]
+                        thrpt:  [61.795 Melem/s 62.037 Melem/s 62.278 Melem/s]
+                 change:
+                        time:   [+1.3161% +1.8345% +2.3224%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.2697% −1.8015% −1.2990%]
+                        Performance has regressed.
+Found 6 outliers among 100 measurements (6.00%)
+  6 (6.00%) high mild
+spsc/polling/burst: 1, pause: 1 ms
+                        time:   [18.882 ns 18.909 ns 18.937 ns]
+                        thrpt:  [52.807 Melem/s 52.885 Melem/s 52.960 Melem/s]
+                 change:
+                        time:   [+11.207% +12.232% +13.192%] (p = 0.00 < 0.05)
+                        thrpt:  [−11.654% −10.899% −10.078%]
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+spsc/processing/burst: 1, pause: 1 ms
+                        time:   [16.490 ns 16.504 ns 16.518 ns]
+                        thrpt:  [60.540 Melem/s 60.593 Melem/s 60.643 Melem/s]
+                 change:
+                        time:   [+4.9162% +5.7198% +6.5647%] (p = 0.00 < 0.05)
+                        thrpt:  [−6.1603% −5.4103% −4.6858%]
+                        Performance has regressed.
+Found 18 outliers among 100 measurements (18.00%)
+  18 (18.00%) high severe
+spsc/polling/burst: 1, pause: 10 ms
+                        time:   [17.731 ns 17.748 ns 17.768 ns]
+                        thrpt:  [56.282 Melem/s 56.345 Melem/s 56.399 Melem/s]
+                 change:
+                        time:   [+3.2753% +3.9859% +4.6969%] (p = 0.00 < 0.05)
+                        thrpt:  [−4.4862% −3.8331% −3.1714%]
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
+spsc/processing/burst: 1, pause: 10 ms
+                        time:   [16.154 ns 16.174 ns 16.207 ns]
+                        thrpt:  [61.703 Melem/s 61.826 Melem/s 61.906 Melem/s]
+                 change:
+                        time:   [+3.3709% +4.4579% +5.5231%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.2340% −4.2676% −3.2610%]
+                        Performance has regressed.
+Found 7 outliers among 100 measurements (7.00%)
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+  4 (4.00%) high severe
+spsc/base/10            time:   [3.8145 ns 3.8165 ns 3.8199 ns]
+                        thrpt:  [2.6179 Gelem/s 2.6202 Gelem/s 2.6215 Gelem/s]
+                 change:
+                        time:   [−1.4952% −1.2667% −1.0525%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.0637% +1.2830% +1.5179%]
+                        Performance has improved.
+Found 11 outliers among 100 measurements (11.00%)
+  1 (1.00%) low severe
+  1 (1.00%) low mild
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+spsc/polling/burst: 10, pause: 0 ms
+                        time:   [50.249 ns 50.258 ns 50.266 ns]
+                        thrpt:  [198.94 Melem/s 198.97 Melem/s 199.01 Melem/s]
+                 change:
+                        time:   [−2.8512% −2.5155% −2.2058%] (p = 0.00 < 0.05)
+                        thrpt:  [+2.2555% +2.5804% +2.9349%]
+                        Performance has improved.
+Found 14 outliers among 100 measurements (14.00%)
+  1 (1.00%) low severe
+  5 (5.00%) low mild
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+spsc/processing/burst: 10, pause: 0 ms
+                        time:   [49.331 ns 49.387 ns 49.454 ns]
+                        thrpt:  [202.21 Melem/s 202.48 Melem/s 202.71 Melem/s]
+                 change:
+                        time:   [−4.0573% −3.4413% −2.9367%] (p = 0.00 < 0.05)
+                        thrpt:  [+3.0255% +3.5640% +4.2289%]
+                        Performance has improved.
+Found 9 outliers among 100 measurements (9.00%)
+  1 (1.00%) low severe
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+  3 (3.00%) high severe
+spsc/polling/burst: 10, pause: 1 ms
+                        time:   [50.615 ns 50.647 ns 50.694 ns]
+                        thrpt:  [197.26 Melem/s 197.45 Melem/s 197.57 Melem/s]
+                 change:
+                        time:   [−2.2095% −1.3738% −0.6654%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.6699% +1.3929% +2.2594%]
+                        Change within noise threshold.
+Found 5 outliers among 100 measurements (5.00%)
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+spsc/processing/burst: 10, pause: 1 ms
+                        time:   [46.660 ns 46.700 ns 46.764 ns]
+                        thrpt:  [213.84 Melem/s 214.13 Melem/s 214.32 Melem/s]
+                 change:
+                        time:   [−6.0778% −5.8330% −5.5567%] (p = 0.00 < 0.05)
+                        thrpt:  [+5.8836% +6.1944% +6.4711%]
+                        Performance has improved.
+Found 11 outliers among 100 measurements (11.00%)
+  1 (1.00%) high mild
+  10 (10.00%) high severe
+spsc/polling/burst: 10, pause: 10 ms
+                        time:   [51.271 ns 51.297 ns 51.339 ns]
+                        thrpt:  [194.78 Melem/s 194.94 Melem/s 195.04 Melem/s]
+                 change:
+                        time:   [+0.7715% +1.5291% +2.0383%] (p = 0.00 < 0.05)
+                        thrpt:  [−1.9976% −1.5061% −0.7656%]
+                        Change within noise threshold.
+Found 5 outliers among 100 measurements (5.00%)
+  3 (3.00%) low mild
+  1 (1.00%) high mild
+  1 (1.00%) high severe
+spsc/processing/burst: 10, pause: 10 ms
+                        time:   [46.403 ns 46.428 ns 46.455 ns]
+                        thrpt:  [215.26 Melem/s 215.39 Melem/s 215.50 Melem/s]
+                 change:
+                        time:   [−10.106% −9.3680% −8.7012%] (p = 0.00 < 0.05)
+                        thrpt:  [+9.5304% +10.336% +11.242%]
+                        Performance has improved.
+Found 14 outliers among 100 measurements (14.00%)
+  5 (5.00%) high mild
+  9 (9.00%) high severe
+spsc/base/100           time:   [60.279 ns 60.297 ns 60.333 ns]
+                        thrpt:  [1.6575 Gelem/s 1.6584 Gelem/s 1.6589 Gelem/s]
+                 change:
+                        time:   [−1.2431% −0.7985% −0.4155%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.4173% +0.8049% +1.2587%]
+                        Change within noise threshold.
+Found 11 outliers among 100 measurements (11.00%)
+  2 (2.00%) high mild
+  9 (9.00%) high severe
+spsc/polling/burst: 100, pause: 0 ms
+                        time:   [195.94 ns 196.05 ns 196.25 ns]
+                        thrpt:  [509.56 Melem/s 510.07 Melem/s 510.35 Melem/s]
+                 change:
+                        time:   [−1.9719% −1.1294% −0.5441%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.5471% +1.1423% +2.0116%]
+                        Change within noise threshold.
+Found 9 outliers among 100 measurements (9.00%)
+  2 (2.00%) high mild
+  7 (7.00%) high severe
+spsc/processing/burst: 100, pause: 0 ms
+                        time:   [192.20 ns 192.25 ns 192.32 ns]
+                        thrpt:  [519.98 Melem/s 520.16 Melem/s 520.29 Melem/s]
+                 change:
+                        time:   [−1.5792% −1.0734% −0.6716%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.6761% +1.0850% +1.6045%]
+                        Change within noise threshold.
+Found 10 outliers among 100 measurements (10.00%)
+  1 (1.00%) low mild
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+spsc/polling/burst: 100, pause: 1 ms
+                        time:   [193.84 ns 193.93 ns 194.08 ns]
+                        thrpt:  [515.24 Melem/s 515.65 Melem/s 515.89 Melem/s]
+                 change:
+                        time:   [−0.9712% −0.7817% −0.5960%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.5996% +0.7879% +0.9808%]
+                        Change within noise threshold.
+Found 14 outliers among 100 measurements (14.00%)
+  2 (2.00%) low severe
+  3 (3.00%) low mild
+  9 (9.00%) high severe
+spsc/processing/burst: 100, pause: 1 ms
+                        time:   [192.85 ns 192.90 ns 192.97 ns]
+                        thrpt:  [518.21 Melem/s 518.39 Melem/s 518.53 Melem/s]
+                 change:
+                        time:   [−1.2728% −0.9508% −0.6337%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.6378% +0.9599% +1.2892%]
+                        Change within noise threshold.
+Found 12 outliers among 100 measurements (12.00%)
+  1 (1.00%) low severe
+  2 (2.00%) low mild
+  4 (4.00%) high mild
+  5 (5.00%) high severe
+spsc/polling/burst: 100, pause: 10 ms
+                        time:   [195.13 ns 195.18 ns 195.25 ns]
+                        thrpt:  [512.17 Melem/s 512.34 Melem/s 512.47 Melem/s]
+                 change:
+                        time:   [−1.2239% −0.5685% −0.0904%] (p = 0.04 < 0.05)
+                        thrpt:  [+0.0904% +0.5717% +1.2391%]
+                        Change within noise threshold.
+Found 12 outliers among 100 measurements (12.00%)
+  4 (4.00%) low mild
+  5 (5.00%) high mild
+  3 (3.00%) high severe
+spsc/processing/burst: 100, pause: 10 ms
+                        time:   [193.15 ns 194.05 ns 195.04 ns]
+                        thrpt:  [512.71 Melem/s 515.33 Melem/s 517.72 Melem/s]
+                 change:
+                        time:   [−4.3442% −3.0876% −2.2299%] (p = 0.00 < 0.05)
+                        thrpt:  [+2.2808% +3.1860% +4.5415%]
+                        Performance has improved.
+Found 27 outliers among 100 measurements (27.00%)
+  12 (12.00%) low mild
+  4 (4.00%) high mild
+  11 (11.00%) high severe
+
+     Running benches/spsc.rs (target/release/deps/spsc-3f8d2c743d6f5ab9)
+Gnuplot not found, using plotters backend
+spsc/base/1             time:   [702.11 ps 702.19 ps 702.27 ps]
+                        thrpt:  [1.4239 Gelem/s 1.4241 Gelem/s 1.4243 Gelem/s]
+                 change:
+                        time:   [−0.1929% −0.0671% +0.0508%] (p = 0.31 > 0.05)
+                        thrpt:  [−0.0508% +0.0672% +0.1933%]
+                        No change in performance detected.
+Found 10 outliers among 100 measurements (10.00%)
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+  5 (5.00%) high severe
+spsc/Crossbeam/burst: 1, pause: 0 ms
+                        time:   [77.581 ns 77.749 ns 77.894 ns]
+                        thrpt:  [12.838 Melem/s 12.862 Melem/s 12.890 Melem/s]
+                 change:
+                        time:   [−0.0827% +1.1746% +2.5979%] (p = 0.09 > 0.05)
+                        thrpt:  [−2.5322% −1.1610% +0.0828%]
+                        No change in performance detected.
+Found 8 outliers among 100 measurements (8.00%)
+  5 (5.00%) low severe
+  2 (2.00%) low mild
+  1 (1.00%) high severe
+spsc/disruptor/burst: 1, pause: 0 ms
+                        time:   [15.083 ns 15.112 ns 15.146 ns]
+                        thrpt:  [66.024 Melem/s 66.174 Melem/s 66.300 Melem/s]
+                 change:
+                        time:   [−5.5206% −4.4841% −3.5218%] (p = 0.00 < 0.05)
+                        thrpt:  [+3.6503% +4.6946% +5.8432%]
+                        Performance has improved.
+spsc/Crossbeam/burst: 1, pause: 1 ms
+                        time:   [74.096 ns 74.333 ns 74.550 ns]
+                        thrpt:  [13.414 Melem/s 13.453 Melem/s 13.496 Melem/s]
+                 change:
+                        time:   [+1.9887% +3.7072% +5.6598%] (p = 0.00 < 0.05)
+                        thrpt:  [−5.3566% −3.5746% −1.9500%]
+                        Performance has regressed.
+Found 4 outliers among 100 measurements (4.00%)
+  1 (1.00%) low severe
+  2 (2.00%) low mild
+  1 (1.00%) high mild
+spsc/disruptor/burst: 1, pause: 1 ms
+                        time:   [15.877 ns 15.897 ns 15.922 ns]
+                        thrpt:  [62.806 Melem/s 62.906 Melem/s 62.984 Melem/s]
+                 change:
+                        time:   [−3.0738% −1.6380% −0.3819%] (p = 0.02 < 0.05)
+                        thrpt:  [+0.3834% +1.6652% +3.1713%]
+                        Change within noise threshold.
+Found 8 outliers among 100 measurements (8.00%)
+  6 (6.00%) high mild
+  2 (2.00%) high severe
+spsc/Crossbeam/burst: 1, pause: 10 ms
+                        time:   [72.439 ns 72.993 ns 73.564 ns]
+                        thrpt:  [13.594 Melem/s 13.700 Melem/s 13.805 Melem/s]
+                 change:
+                        time:   [−1.3736% −0.2852% +0.8146%] (p = 0.63 > 0.05)
+                        thrpt:  [−0.8080% +0.2860% +1.3928%]
+                        No change in performance detected.
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) low mild
+spsc/disruptor/burst: 1, pause: 10 ms
+                        time:   [15.456 ns 15.487 ns 15.523 ns]
+                        thrpt:  [64.420 Melem/s 64.570 Melem/s 64.699 Melem/s]
+                 change:
+                        time:   [+1.6091% +2.0875% +2.5662%] (p = 0.00 < 0.05)
+                        thrpt:  [−2.5020% −2.0448% −1.5836%]
+                        Performance has regressed.
+spsc/base/10            time:   [3.8158 ns 3.8167 ns 3.8177 ns]
+                        thrpt:  [2.6194 Gelem/s 2.6200 Gelem/s 2.6207 Gelem/s]
+                 change:
+                        time:   [−0.0601% +0.0229% +0.0976%] (p = 0.58 > 0.05)
+                        thrpt:  [−0.0975% −0.0229% +0.0601%]
+                        No change in performance detected.
+Found 12 outliers among 100 measurements (12.00%)
+  8 (8.00%) high mild
+  4 (4.00%) high severe
+spsc/Crossbeam/burst: 10, pause: 0 ms
+                        time:   [451.80 ns 452.26 ns 452.77 ns]
+                        thrpt:  [22.086 Melem/s 22.111 Melem/s 22.134 Melem/s]
+                 change:
+                        time:   [−11.565% −9.2827% −7.3215%] (p = 0.00 < 0.05)
+                        thrpt:  [+7.8999% +10.233% +13.077%]
+                        Performance has improved.
+Found 11 outliers among 100 measurements (11.00%)
+  4 (4.00%) low mild
+  1 (1.00%) high mild
+  6 (6.00%) high severe
+spsc/disruptor/burst: 10, pause: 0 ms
+                        time:   [46.862 ns 47.063 ns 47.270 ns]
+                        thrpt:  [211.55 Melem/s 212.48 Melem/s 213.39 Melem/s]
+                 change:
+                        time:   [−17.798% −14.704% −12.049%] (p = 0.00 < 0.05)
+                        thrpt:  [+13.699% +17.239% +21.651%]
+                        Performance has improved.
+Found 13 outliers among 100 measurements (13.00%)
+  3 (3.00%) low severe
+  4 (4.00%) high mild
+  6 (6.00%) high severe
+spsc/Crossbeam/burst: 10, pause: 1 ms
+                        time:   [458.06 ns 459.17 ns 460.34 ns]
+                        thrpt:  [21.723 Melem/s 21.779 Melem/s 21.831 Melem/s]
+                 change:
+                        time:   [−2.5717% −1.0573% +0.5360%] (p = 0.19 > 0.05)
+                        thrpt:  [−0.5332% +1.0686% +2.6396%]
+                        No change in performance detected.
+spsc/disruptor/burst: 10, pause: 1 ms
+                        time:   [50.153 ns 50.250 ns 50.327 ns]
+                        thrpt:  [198.70 Melem/s 199.00 Melem/s 199.39 Melem/s]
+                 change:
+                        time:   [−1.8862% −1.3234% −0.7339%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.7393% +1.3412% +1.9224%]
+                        Change within noise threshold.
+spsc/Crossbeam/burst: 10, pause: 10 ms
+                        time:   [440.99 ns 441.58 ns 442.31 ns]
+                        thrpt:  [22.608 Melem/s 22.646 Melem/s 22.676 Melem/s]
+                 change:
+                        time:   [−3.5349% −2.1091% −0.7543%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.7600% +2.1545% +3.6644%]
+                        Change within noise threshold.
+Found 12 outliers among 100 measurements (12.00%)
+  7 (7.00%) high mild
+  5 (5.00%) high severe
+spsc/disruptor/burst: 10, pause: 10 ms
+                        time:   [49.545 ns 49.559 ns 49.572 ns]
+                        thrpt:  [201.73 Melem/s 201.78 Melem/s 201.84 Melem/s]
+                 change:
+                        time:   [−3.8215% −2.0608% −1.0092%] (p = 0.00 < 0.05)
+                        thrpt:  [+1.0195% +2.1042% +3.9734%]
+                        Performance has improved.
+Found 12 outliers among 100 measurements (12.00%)
+  1 (1.00%) low severe
+  6 (6.00%) low mild
+  4 (4.00%) high mild
+  1 (1.00%) high severe
+spsc/base/100           time:   [60.280 ns 60.298 ns 60.329 ns]
+                        thrpt:  [1.6576 Gelem/s 1.6584 Gelem/s 1.6589 Gelem/s]
+                 change:
+                        time:   [−0.1234% −0.0099% +0.0971%] (p = 0.87 > 0.05)
+                        thrpt:  [−0.0970% +0.0099% +0.1235%]
+                        No change in performance detected.
+Found 11 outliers among 100 measurements (11.00%)
+  2 (2.00%) high mild
+  9 (9.00%) high severe
+spsc/Crossbeam/burst: 100, pause: 0 ms
+                        time:   [1.7276 µs 1.7419 µs 1.7539 µs]
+                        thrpt:  [57.016 Melem/s 57.410 Melem/s 57.883 Melem/s]
+                 change:
+                        time:   [−1.8279% +0.5861% +2.7574%] (p = 0.64 > 0.05)
+                        thrpt:  [−2.6834% −0.5827% +1.8619%]
+                        No change in performance detected.
+Found 13 outliers among 100 measurements (13.00%)
+  6 (6.00%) low severe
+  6 (6.00%) low mild
+  1 (1.00%) high mild
+spsc/disruptor/burst: 100, pause: 0 ms
+                        time:   [195.61 ns 195.74 ns 195.92 ns]
+                        thrpt:  [510.40 Melem/s 510.88 Melem/s 511.21 Melem/s]
+                 change:
+                        time:   [−3.2265% −1.5940% −0.4733%] (p = 0.01 < 0.05)
+                        thrpt:  [+0.4756% +1.6198% +3.3341%]
+                        Change within noise threshold.
+Found 16 outliers among 100 measurements (16.00%)
+  4 (4.00%) low mild
+  3 (3.00%) high mild
+  9 (9.00%) high severe
+spsc/Crossbeam/burst: 100, pause: 1 ms
+                        time:   [1.6878 µs 1.7114 µs 1.7335 µs]
+                        thrpt:  [57.686 Melem/s 58.431 Melem/s 59.249 Melem/s]
+                 change:
+                        time:   [−2.1418% −0.7806% +0.6216%] (p = 0.29 > 0.05)
+                        thrpt:  [−0.6177% +0.7867% +2.1887%]
+                        No change in performance detected.
+Found 9 outliers among 100 measurements (9.00%)
+  1 (1.00%) low severe
+  8 (8.00%) low mild
+spsc/disruptor/burst: 100, pause: 1 ms
+                        time:   [196.29 ns 196.45 ns 196.65 ns]
+                        thrpt:  [508.52 Melem/s 509.03 Melem/s 509.46 Melem/s]
+                 change:
+                        time:   [−0.3135% −0.0186% +0.2278%] (p = 0.90 > 0.05)
+                        thrpt:  [−0.2273% +0.0186% +0.3145%]
+                        No change in performance detected.
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+spsc/Crossbeam/burst: 100, pause: 10 ms
+                        time:   [1.6334 µs 1.6509 µs 1.6672 µs]
+                        thrpt:  [59.982 Melem/s 60.574 Melem/s 61.222 Melem/s]
+                 change:
+                        time:   [−9.0936% −7.7110% −6.3347%] (p = 0.00 < 0.05)
+                        thrpt:  [+6.7631% +8.3553% +10.003%]
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) low severe
+  3 (3.00%) low mild
+spsc/disruptor/burst: 100, pause: 10 ms
+                        time:   [196.46 ns 196.51 ns 196.56 ns]
+                        thrpt:  [508.75 Melem/s 508.89 Melem/s 509.02 Melem/s]
+                 change:
+                        time:   [−0.7321% −0.4609% −0.2485%] (p = 0.00 < 0.05)
+                        thrpt:  [+0.2491% +0.4630% +0.7375%]
+                        Change within noise threshold.
+Found 6 outliers among 100 measurements (6.00%)
+  2 (2.00%) low severe
+  1 (1.00%) low mild
+  2 (2.00%) high mild
+  1 (1.00%) high severe

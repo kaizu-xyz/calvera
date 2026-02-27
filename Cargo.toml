@@ -15,3 +15,24 @@ thiserror = "2.0.18"
 
 [target.'cfg(loom)'.dependencies]
 loom = "0.7"
+
+[dev-dependencies]
+criterion = "0.8.2"
+crossbeam = "0.8.4"
+
+[[bench]]
+name = "spsc"
+harness = false
+
+[[bench]]
+name = "mpsc"
+harness = false
+
+[[bench]]
+name = "poller"
+harness = false
+
+[[bench]]
+name = "counters"
+harness = false
+
