@@ -4,6 +4,23 @@ use crossbeam_utils::CachePadded;
 
 use crate::Sequence;
 
+/// A cache-line-padded atomic sequence counter shared between threads.
+///
+/// Cursors are the fundamental coordination primitive in the disruptor.
+/// Every participant — producers and consumers — has a cursor that tracks
+/// its progress through the ring buffer as a monotonically increasing
+/// sequence number (starting at [`NONE`] = -1).
+///
+/// **Producer cursors** are written by the producer after publishing an event
+/// and read by consumers to discover new events.
+///
+/// **Consumer cursors** are written by the consumer after processing an event
+/// and read by producers to know which slots are safe to overwrite.
+///
+/// The inner `AtomicI64` is wrapped in `CachePadded` to prevent false sharing:
+/// without padding, a producer cursor and a consumer cursor could land on the
+/// same cache line, causing each thread's writes to invalidate the other's
+/// cache — defeating the lock-free design.
 pub struct Cursor {
     counter: CachePadded<AtomicI64>,
 }

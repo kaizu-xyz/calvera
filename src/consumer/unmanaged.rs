@@ -1,3 +1,45 @@
+//! Unmanaged (pull-based) consumer via [`EventPoller`].
+//!
+//! Unlike the managed consumer (where the disruptor owns the thread and pushes
+//! events to your closure), the `EventPoller` lets you own the thread and pull
+//! events when you're ready. This is useful when:
+//!
+//! - You need to integrate with an existing event loop or scheduler.
+//! - You want to interleave polling with other work.
+//! - You need non-`Send` state that can't be moved to a managed thread.
+//!
+//! # Usage
+//!
+//! ```no_run
+//! # use calvera::*;
+//! # let factory = || 0i64;
+//! # let builder = build_uni_producer_unchecked(8, factory, BusySpin);
+//! # let (mut poller, builder) = builder.event_poller();
+//! # let mut producer = builder.build();
+//! loop {
+//!     match poller.poll() {
+//!         Ok(mut events) => {
+//!             for event in &mut events {
+//!                 // process event
+//!             }
+//!         } // EventGuard dropped here → signals progress to the disruptor
+//!         Err(EPolling::NoEvents) => { /* do other work or retry */ }
+//!         Err(EPolling::Shutdown) => break,
+//!     }
+//! }
+//! ```
+//!
+//! # How it works
+//!
+//! 1. [`EventPoller::poll`] (or [`poll_take`](EventPoller::poll_take)) checks the
+//!    dependent barrier for available sequences.
+//! 2. If events are available, it returns an [`EventGuard`] — a bounded, RAII
+//!    iterator over the available events.
+//! 3. When the `EventGuard` is dropped, it advances the consumer's cursor to
+//!    signal that those slots can be reused. **Not all events need to be read** —
+//!    dropping the guard early still advances the cursor to the highest available
+//!    sequence, effectively skipping unread events.
+
 use crate::sync::{
     Arc,
     atomic::{AtomicI64, Ordering, fence},
@@ -9,6 +51,17 @@ use crate::{
     Sequence, barrier::Barrier, cursor::Cursor, errors::EPolling, ring_buffer::RingBuffer,
 };
 
+/// Pull-based event consumer.
+///
+/// Created via the builder's `.event_poller()` method. You own the `EventPoller`
+/// and call [`poll`](Self::poll) or [`poll_take`](Self::poll_take) from any
+/// thread at any time.
+///
+/// Internally holds:
+/// - A reference to the shared ring buffer (read-only access via `get_ref`).
+/// - The dependent barrier (producer or upstream consumer) to check for new events.
+/// - Its own cursor, which it advances when an [`EventGuard`] is dropped.
+/// - The shutdown sentinel to detect when the producer is done.
 pub struct EventPoller<E, B> {
     ring_buffer: Arc<RingBuffer<E>>,
     dependent_barrier: Arc<B>,
@@ -16,21 +69,29 @@ pub struct EventPoller<E, B> {
     cursor: Arc<Cursor>,
 }
 
-/// Guards the available events that can be processed when using the EventPoller API.
-/// It can be used as an iterator to read the published events and the dropping of the `EventGuard`
-/// will signal to the `Disruptor` that the reading is completed. This will allow other consumers or
-/// producers to advance.
+/// RAII guard over a batch of available events.
+///
+/// Obtained from [`EventPoller::poll`] or [`EventPoller::poll_take`].
+/// Iterate over events via `for event in &mut guard { ... }`.
+///
+/// **On drop**, the guard advances the consumer cursor to `available`,
+/// signaling to producers (or downstream consumers) that these slots
+/// can be reused. This happens even if not all events were read —
+/// unread events are effectively skipped.
+///
+/// # Lifetime
+///
+/// The iterator is implemented on `&'g mut EventGuard` (not `EventGuard` directly)
+/// so that returned `&E` references are tied to the borrow of the guard,
+/// not to the `EventPoller`. This prevents holding event references past the
+/// guard's drop — which would be unsound because the producer could overwrite
+/// the slot once the cursor advances.
 pub struct EventGuard<'p, E, B> {
     parent: &'p mut EventPoller<E, B>,
     sequence: Sequence,
     available: Sequence,
 }
 
-/// The Iterator is implemented for the `&mut EventGuard` to bind the returned
-/// events' lifetime to the lifetime (`'g`) of the `EventGuard`.
-/// (And not the lifetime of the `EventPoller`. The latter would be catastrophic because a client
-/// could hold on to a reference to a en Event after the drop method was run for the
-/// `EventGuard` and a publisher could write to the immutable reference - UB.)
 impl<'g, E, B> Iterator for &'g mut EventGuard<'_, E, B> {
     type Item = &'g E;
 
@@ -39,7 +100,8 @@ impl<'g, E, B> Iterator for &'g mut EventGuard<'_, E, B> {
             return None;
         }
 
-        // SAFETY: The Guard is authorized to read up to and including `available` sequence.
+        // SAFETY: The guard is authorized to read up to and including `available`.
+        // The Acquire fence in poll_take guarantees visibility of the producer's writes.
         let event_ptr = self.parent.ring_buffer.get_ref(self.sequence);
         let event = unsafe { &*event_ptr };
         self.sequence += 1;
@@ -48,7 +110,7 @@ impl<'g, E, B> Iterator for &'g mut EventGuard<'_, E, B> {
 }
 
 impl<E, B> ExactSizeIterator for &mut EventGuard<'_, E, B> {
-    /// Returns the number of events available to read.
+    /// Returns the number of remaining events available to read.
     fn len(&self) -> usize {
         (self.available - self.sequence + 1) as usize
     }
@@ -56,9 +118,8 @@ impl<E, B> ExactSizeIterator for &mut EventGuard<'_, E, B> {
 
 impl<E, B> Drop for EventGuard<'_, E, B> {
     fn drop(&mut self) {
-        // Signal to producers or later consumers that we're done processing `available` sequence.
-        // Note, not all events in the range have to have been read.
-        // (I.e. client code can skip reading any number events.)
+        // Advance the cursor to `available` regardless of how many events were read.
+        // This allows client code to skip events without stalling the disruptor.
         self.parent.cursor.store(self.available);
     }
 }
