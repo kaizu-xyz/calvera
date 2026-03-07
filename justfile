@@ -38,6 +38,15 @@ alias t := test
 test *FLAGS:
     cargo test {{FLAGS}}
 
+# Runs criterion benchmarks
+bench *FLAGS:
+    cargo bench {{FLAGS}}
+
 # Runs loom concurrency verification tests
 loom *FLAGS:
     RUSTFLAGS="--cfg loom" cargo test --test loom_tests --release {{FLAGS}}
+
+# Runs TLA+ formal verification (requires tlc: brew install tlaplus)
+tla:
+    cd verification && tlc Disruptor.tla
+    cd verification && tlc MPMC.tla
