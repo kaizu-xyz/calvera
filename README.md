@@ -335,14 +335,13 @@ Polling and managed consumers have comparable performance.
 - Calvera's latency is **resilient to pauses** between bursts (consistent
   across 0 ms, 1 ms, and 10 ms pauses), while Crossbeam shows more variance.
 
-For stable results on Linux, see [core isolation guide](docs/linux-core-isolation.md).
+For stable results on Linux, see [core isolation guide](docs/core-isolation.md).
 
 ## Documentation
 
 - [Architecture](docs/architecture.md) — module map, data flow, memory ordering
-- [Linux core isolation](docs/linux-core-isolation.md) — `isolcpus`, `nohz_full`, SCHED_FIFO
+- [Linux core isolation](docs/core-isolation.md) — `isolcpus`, `nohz_full`, SCHED_FIFO
 - [TLA+ verification](verification/README.md) — formal model checking
-- [UnsafeCell post-mortem](docs/postmortem-unsafecell-access-model.md) — a bug loom caught
 
 ## Acknowledgements
 
