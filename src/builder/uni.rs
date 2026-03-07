@@ -1,3 +1,8 @@
+//! Builder for single-producer disruptors.
+//!
+//! Created via [`build_uni_producer_unchecked`](super::build_uni_producer_unchecked) or
+//! `Disruptor::with_capacity().build_uni_producer()`.
+
 use std::marker::PhantomData;
 
 use crate::sync::Arc;
@@ -11,7 +16,11 @@ use crate::{
     wait_strategies::WaitStrategy,
 };
 
-// E: Event; W: WaitingStategy; B: Barrier
+/// Typestate builder for [`UniProducer`].
+///
+/// `State` tracks how many consumers have been added ([`NC`] -> [`SC`] -> [`MC`]).
+/// `B` is the barrier type for the current consumer group's dependency — starts as the producer
+/// barrier, then shifts to a consumer barrier after [`.and_then()`](UPBuilder::and_then).
 pub struct UPBuilder<State, E, W, B> {
     state: PhantomData<State>,
     context: BuilderContext<E, W>,
@@ -151,8 +160,11 @@ where
         )
     }
 
-    /// Complete the (concurrent) consumption of events so far and let new consumers process
-    /// events after all previous consumers have read them.
+    /// Completes the current consumer group and starts a new pipeline stage.
+    ///
+    /// Consumers added after `.and_then()` will only see events after all consumers in the
+    /// previous group have finished reading them. This is how you build sequential (diamond)
+    /// consumer topologies.
     pub fn and_then(mut self) -> UPBuilder<NC, E, W, UniConsumerBarrier> {
         // Guaranteed to be present by construction.
         let consumer_cursors = self.context().current_consumer_cursors.as_mut().unwrap();
@@ -244,8 +256,11 @@ where
         self
     }
 
-    /// Complete the (concurrent) consumption of events so far and let new consumers process
-    /// events after all previous consumers have read them.
+    /// Completes the current consumer group and starts a new pipeline stage.
+    ///
+    /// Consumers added after `.and_then()` will only see events after all consumers in the
+    /// previous group have finished reading them. This is how you build sequential (diamond)
+    /// consumer topologies.
     pub fn and_then(mut self) -> UPBuilder<NC, E, W, MultiConsumerBarrier> {
         let consumer_cursors = self
             .context()

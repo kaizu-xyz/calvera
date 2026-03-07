@@ -1,3 +1,10 @@
+//! Multi-producer disruptor.
+//!
+//! Multiple threads can publish concurrently by cloning the [`MultiProducer`].
+//! Sequence claiming uses CAS on a shared cursor. An availability bitfield
+//! tracks which individual slots have been published, since producers may
+//! finish writing out of order.
+
 use std::process;
 
 use crate::sync::{
@@ -17,11 +24,25 @@ use crate::{
     ring_buffer::RingBuffer,
 };
 
+/// Shared state protected by a cold-path `Mutex`.
+///
+/// Holds consumer join handles and a reference count of live producer clones.
+/// The mutex is only taken during `Clone` and `Drop` (control plane), never
+/// on the publish hot path.
 struct SharedProducerCtx {
     consumer_handles: Vec<ConsumerHandle>,
     counter: AtomicI64,
 }
 
+/// Cloneable producer handle for a multi-producer disruptor.
+///
+/// Each clone gets its own `claimed_sequence` and `sequence_clear_of_consumers`
+/// cache, so the hot path is per-thread with no sharing beyond the CAS on the
+/// producer barrier's cursor. The `shared_producer` `Mutex` is only taken
+/// during `Clone` and `Drop` (control plane), never on the hot path.
+///
+/// When the last clone drops, it signals shutdown and joins all consumer
+/// threads.
 pub struct MultiProducer<E, C> {
     shutdown_at_sequence: Arc<CachePadded<AtomicI64>>,
     ring_buffer: Arc<RingBuffer<E>>,
@@ -248,18 +269,39 @@ where
     }
 }
 
-/// Barrier for multiple producers.
+/// Barrier for multiple producers, using an availability bitfield scheme.
+///
+/// Producers claim sequences via CAS on a shared `Cursor`, but they may
+/// write to their claimed slots out of order (producer A claims seq 5,
+/// producer B claims seq 6, B finishes writing first). The cursor alone
+/// cannot tell consumers which sequences are safe to read.
+///
+/// Instead, each `AtomicU64` tracks availability of 64 slots. Each bit
+/// encodes whether the slot was published in an even or odd round — this
+/// way producers avoid coordinating directly (with the added overhead
+/// that would have). When a producer publishes, it XORs the bit for that
+/// slot to flip its parity.
+///
+/// `get_after` scans bits starting from `prev` to find the highest
+/// contiguous published sequence.
+///
+/// Note: producers can never "overtake" each other and overwrite the
+/// availability of an event in the "previous" round, because all
+/// producers must wait for the consumer furthest behind (which is again
+/// blocked by the slowest producer).
 pub struct MultiProducerBarrier {
-    /// Cursor used by producers to claim exclusive sequences per producer.
+    /// Cursor used by producers to claim exclusive sequences via CAS.
     cursor: Cursor,
-    /// AtomicU64s each track availability of 64 slots.
-    /// Each bit in the AtomicU64 encodes whether the slot was published in an even or odd round.
-    /// This way producers avoid coordinating directly (with the added overhead that would have).
+    /// Availability bitfield. Each `AtomicU64` tracks 64 slots. Each bit
+    /// encodes whether the slot was published in an even or odd round.
+    /// Producers XOR the relevant bit on publish to flip its parity.
     /// Note, producers can never "overtake" each other and overwrite the availability of an event
     /// in the "previous" round as all producers must wait for the consumer furtherst behind (which
     /// is again blocked by the slowest producer).
     available: Box<[AtomicU64]>,
+    /// Bitmask for converting a sequence to a slot index (`sequence & index_mask`).
     index_mask: usize,
+    /// Bit shift for calculating the round number (`sequence >> index_shift`).
     index_shift: usize,
 }
 

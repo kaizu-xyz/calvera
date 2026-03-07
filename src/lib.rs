@@ -1,3 +1,97 @@
+//! Low-latency inter-thread communication via the Disruptor pattern.
+//!
+//! Calvera is a Rust implementation of the [LMAX Disruptor] — a lock-free,
+//! bounded ring buffer designed for scenarios where threads must exchange data
+//! with minimal and predictable latency.
+//!
+//! Use it when `std::sync::mpsc` or `crossbeam` channels aren't fast enough
+//! and you need single-digit microsecond (or sub-microsecond) publish-to-consume
+//! latency.
+//!
+//! [LMAX Disruptor]: https://lmax-exchange.github.io/disruptor/
+//!
+//! # How it works
+//!
+//! A pre-allocated ring buffer holds event slots. Producers write into slots by
+//! sequence number; consumers read from them. All coordination happens through
+//! atomic sequence cursors — no locks, no allocations on the hot path.
+//!
+//! Backpressure is built in: if consumers fall behind, the producer spins (or
+//! returns an error) until slots free up. This means latency is bounded by the
+//! slowest consumer, not by unbounded queue growth.
+//!
+//! # Usage
+//!
+//! There are three phases: **setup**, **publish**, **shutdown**.
+//!
+//! ## Setup
+//!
+//! Choose single or multi producer, set the ring buffer size (must be a power
+//! of two), provide an event factory, and wire up consumers:
+//!
+//! ```
+//! use calvera::*;
+//!
+//! struct Event { price: f64 }
+//!
+//! let factory = || Event { price: 0.0 };
+//!
+//! let processor = |e: &Event, sequence: Sequence, end_of_batch: bool| {
+//!     // Process each event as it arrives.
+//! };
+//!
+//! let mut producer = build_uni_producer_unchecked(8, factory, BusySpin)
+//!     .handle_events_with(processor)
+//!     .build();
+//! ```
+//!
+//! For compile-time size validation, use [`Disruptor::with_capacity`] instead.
+//!
+//! ## Publish
+//!
+//! ```
+//! # use calvera::*;
+//! # struct Event { price: f64 }
+//! # let factory = || Event { price: 0.0 };
+//! # let processor = |e: &Event, _: Sequence, _: bool| {};
+//! # let mut producer = build_uni_producer_unchecked(8, factory, BusySpin)
+//! #     .handle_events_with(processor)
+//! #     .build();
+//! for i in 0..10 {
+//!     producer.publish(|e| { e.price = i as f64; });
+//! }
+//! ```
+//!
+//! ## Shutdown
+//!
+//! When the last [`Producer`] is dropped, all remaining events are processed,
+//! consumer threads are joined, and the disruptor is torn down.
+//!
+//! # Consumer models
+//!
+//! - **Managed** (push): The disruptor owns the consumer thread. You provide
+//!   a closure via `.handle_events_with()` and events are pushed to it.
+//! - **Unmanaged** (pull): You own the thread and call [`EventPoller::poll`]
+//!   when ready.
+//!
+//! Consumers can be **parallel** (reading the same events concurrently) or
+//! **sequential** (chained with `.and_then()` so downstream consumers only
+//! see events after upstream ones finish).
+//!
+//! # Multi-producer
+//!
+//! ```
+//! # use calvera::*;
+//! # struct Event { price: f64 }
+//! # let factory = || Event { price: 0.0 };
+//! # let processor = |e: &Event, _: Sequence, _: bool| {};
+//! let mut p1 = build_multi_producer_unchecked(64, factory, BusySpin)
+//!     .handle_events_with(processor)
+//!     .build();
+//! let mut p2 = p1.clone();
+//! // p1 and p2 can publish from different threads.
+//! ```
+
 mod builder;
 mod consumer;
 mod disruptor;
@@ -13,6 +107,11 @@ use periphery::barrier;
 use periphery::cursor;
 use periphery::wait_strategies;
 
+/// The type for sequence numbers in the ring buffer.
+///
+/// Sequences are monotonically increasing `i64` values starting at 0.
+/// The sentinel value `-1` means "nothing published/consumed yet".
+/// The theoretical limit is `i64::MAX` (~9.2 × 10¹⁸ events) — effectively unlimited.
 pub type Sequence = i64;
 
 pub use crate::builder::{

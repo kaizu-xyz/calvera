@@ -1,3 +1,9 @@
+//! Single-producer disruptor.
+//!
+//! Only one thread publishes events. Sequence claiming is a simple local
+//! counter increment — no atomic CAS needed. This is the fastest producer
+//! variant.
+
 use crossbeam_utils::CachePadded;
 
 use crate::sync::{
@@ -15,6 +21,13 @@ use crate::{
     ring_buffer::RingBuffer,
 };
 
+/// Producer handle for a single-producer disruptor.
+///
+/// Owns the disruptor lifecycle: when dropped, it signals shutdown and joins
+/// all consumer threads. Not `Clone` — only one publisher exists at a time.
+///
+/// Generic over `C`, the consumer barrier type (e.g. `UniConsumerBarrier` or
+/// `MultiConsumerBarrier`).
 pub struct UniProducer<E, C> {
     /// Shared with consumer threads. When the producer drops, it writes its
     /// current sequence here. Consumers check this to know when to exit:
@@ -35,7 +48,7 @@ pub struct UniProducer<E, C> {
     /// The producer reads this to check the slowest consumer's position.
     /// It's generic over it since it can be single or multi consumer.
     ///
-    /// It holds references (Arc<Cursor>) to the consumer cursors internally.
+    /// It holds references (`Arc<Cursor>`) to the consumer cursors internally.
     consumer_barrier: C,
     /// Next sequence to publish.
     sequence: Sequence,
@@ -229,6 +242,10 @@ where
     }
 }
 
+/// Barrier that tracks the highest published sequence for a single producer.
+///
+/// Wraps a single `Cursor` and uses a `Release` store on publish. Consumers
+/// wait on this barrier to know which sequences are safe to read.
 pub struct UniProducerBarrier {
     cursor: Cursor,
 }

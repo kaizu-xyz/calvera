@@ -1,3 +1,10 @@
+//! Type-safe builder for constructing disruptors.
+//!
+//! Uses a typestate pattern with phantom markers ([`NC`], [`SC`], [`MC`]) to enforce at compile
+//! time that at least one consumer is added before [`.build()`] is called. Consumer threads are
+//! spawned eagerly — each [`.handle_events_with()`] call spawns the thread immediately. By the
+//! time `.build()` returns, all consumers are running and waiting for events.
+
 use crate::affinity::cpu_has_core_else_panic;
 use crate::barrier::{Barrier, NONE};
 use crate::builder::multi::MPBuilder;
@@ -18,11 +25,15 @@ pub mod uni;
 
 // We use markers instead of enums to avoid runtime check
 
-/// State: No consumers (yet).
+/// No Consumers — initial builder state. `.build()` is not available in this state, forcing the
+/// caller to add at least one consumer first. Zero-sized phantom type used only in the type system.
 pub struct NC;
-/// State: Single consumer.
+/// Single Consumer — exactly one consumer has been added. `.build()` returns a producer backed by
+/// a [`UniConsumerBarrier`](crate::consumer::UniConsumerBarrier). Zero-sized phantom type.
 pub struct SC;
-/// State: Multiple consumers.
+/// Multiple Consumers — two or more consumers have been added. `.build()` returns a producer
+/// backed by a [`MultiConsumerBarrier`](crate::consumer::MultiConsumerBarrier). Zero-sized phantom
+/// type.
 pub struct MC;
 
 /// Build a single producer Disruptor. Use this if you only need to publish events from one thread.
@@ -123,6 +134,10 @@ where
     )
 }
 
+/// Configures the next consumer thread's name and CPU affinity.
+///
+/// Methods are chainable and apply to the immediately following `.handle_events_with()` call,
+/// not globally.
 pub trait ProcessorSettings<E, W>: Sized {
     fn context(&mut self) -> &mut BuilderContext<E, W>;
 
@@ -140,7 +155,10 @@ pub trait ProcessorSettings<E, W>: Sized {
     }
 }
 
-// builder's accumulator — the shared mutable state that gets built up as you chain builder methods, then consumed when you call .build()
+/// Accumulator for shared mutable state during builder construction.
+///
+/// Holds the ring buffer, shutdown sentinel, consumer handles, consumer cursors, wait strategy,
+/// and thread configuration. Consumed by `.build()` to assemble the final producer.
 pub struct BuilderContext<E, W> {
     pub(crate) shutdown_at_sequence: Arc<CachePadded<AtomicI64>>,
     pub(crate) ring_buffer: Arc<RingBuffer<E>>,
@@ -188,6 +206,10 @@ impl<E, W> BuilderContext<E, W> {
     }
 }
 
+/// Per-consumer thread configuration (optional name, optional CPU affinity).
+///
+/// Settings are consumed (via `.take()`) when each consumer is spawned, so they apply to the
+/// next consumer added, not globally.
 #[derive(Default)]
 pub(crate) struct ThreadContext {
     affinity: Option<CoreId>,
@@ -215,13 +237,13 @@ impl ThreadContext {
     }
 }
 
-/// Shared builder behavior for all producer types (uni, multi).
+/// Internal trait providing the shared implementation for adding consumers and event pollers.
 ///
-/// Consumer threads are spawned eagerly during build — each call to
-/// `add_event_handler` spawns the thread immediately. By the time
-/// `.build()` returns, all consumer threads are already running and
-/// waiting for events. `.build()` just assembles the producer from
-/// the accumulated cursors, join handles, and barriers.
+/// Both [`UPBuilder`](uni::UPBuilder) and [`MPBuilder`](multi::MPBuilder) implement this.
+/// Consumer threads are spawned eagerly — each call to `add_event_handler` spawns the thread
+/// immediately. By the time `.build()` returns, all consumer threads are already running and
+/// waiting for events. `.build()` just assembles the producer from the accumulated cursors,
+/// join handles, and barriers.
 trait Builder<E, W, B>: ProcessorSettings<E, W>
 where
     E: 'static + Send + Sync,

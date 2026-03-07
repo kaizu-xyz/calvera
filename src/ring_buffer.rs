@@ -1,9 +1,27 @@
+//! Core data structure of the Disruptor: a pre-allocated, fixed-size ring buffer.
+//!
+//! The buffer size must be a power of two so that sequence-to-slot indexing
+//! is a single bitwise AND rather than a modulo division. Each slot uses
+//! [`UnsafeCell`] for interior mutability, and the buffer is
+//! `unsafe impl Sync` because the sequence protocol in the producer/consumer
+//! machinery guarantees exclusive write access and shared read access at the
+//! type level — no runtime locks are needed.
+
 use crate::sync::UnsafeCell;
 
 use crate::Sequence;
 
+// SAFETY: The Disruptor's sequence protocol ensures that a slot is only ever
+// written by exactly one producer at a time (the producer must claim and then
+// publish a sequence), and consumers only read a slot after the producer has
+// published the corresponding sequence. This guarantees no data races on the
+// `UnsafeCell` contents without requiring runtime synchronization.
 unsafe impl<T> Sync for RingBuffer<T> {}
 
+/// Fixed-size, pre-allocated ring buffer indexed by sequence number.
+///
+/// Slots are allocated once at construction and reused indefinitely as the
+/// sequence wraps around, avoiding any per-event allocation.
 pub struct RingBuffer<T> {
     /// Heap allocated contiguous slice
     /// of slots with interior mutability.
@@ -18,6 +36,11 @@ pub struct RingBuffer<T> {
 }
 
 impl<T> RingBuffer<T> {
+    /// Creates a ring buffer with `size` slots, each initialized by calling `event_source`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `size` is not a power of two.
     pub fn new<F>(size: usize, mut event_source: F) -> Self
     where
         F: FnMut() -> T,
@@ -34,12 +57,17 @@ impl<T> RingBuffer<T> {
         RingBuffer { slots, index_mask }
     }
 
-    /// The oldest sequence that the producer would overwrite if it were to publish at the given sequence.
+    /// Returns the oldest sequence that would be overwritten if the producer
+    /// publishes at `sequence`. Used to check whether all consumers have moved
+    /// past that point before the producer may proceed.
     #[inline]
     fn wrap_point(&self, sequence: Sequence) -> Sequence {
         sequence - self.size()
     }
 
+    /// Returns the number of slots available for the producer to write into,
+    /// given the producer's current `producer` sequence and the slowest
+    /// consumer's `highest_read_by_consumers` sequence.
     #[inline]
     pub(crate) fn free_slots(
         &self,
@@ -50,6 +78,10 @@ impl<T> RingBuffer<T> {
         highest_read_by_consumers - wrap_point
     }
 
+    /// Returns a raw mutable pointer to the slot at `sequence`.
+    ///
+    /// Used by the producer to write into the slot. Under loom, this
+    /// registers an exclusive write access for data-race detection.
     #[inline]
     pub fn get(&self, sequence: Sequence) -> *mut T {
         let index = (sequence & self.index_mask) as usize;
@@ -58,10 +90,12 @@ impl<T> RingBuffer<T> {
         slot.get()
     }
 
-    /// Read-only access to a slot. Consumers should use this instead of `get()`.
-    /// Under loom, this registers a shared read (via `with()`) rather than an
-    /// exclusive write (via `with_mut()`), allowing multiple concurrent consumers
-    /// to read the same slot without triggering a causality violation.
+    /// Returns a raw const pointer to the slot at `sequence` (read-only access).
+    ///
+    /// Consumers should use this instead of [`get`](Self::get). Under loom,
+    /// this registers a shared read (via `with()`) rather than an exclusive
+    /// write (via `with_mut()`), so multiple concurrent consumers can read the
+    /// same slot without triggering a causality violation.
     #[inline]
     pub fn get_ref(&self, sequence: Sequence) -> *const T {
         let index = (sequence & self.index_mask) as usize;
@@ -69,6 +103,7 @@ impl<T> RingBuffer<T> {
         slot.get_ref()
     }
 
+    /// Returns the number of slots in the ring buffer.
     #[inline]
     pub(crate) fn size(&self) -> i64 {
         self.slots.len() as i64

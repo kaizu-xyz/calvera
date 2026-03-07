@@ -49,7 +49,7 @@ impl ConsumerHandle {
 
 /// Consumer barrier for a single consumer (SPSC or single-consumer SPMC stage).
 ///
-/// Wraps a single consumer's [`Cursor`] via `Arc`. The producer reads this
+/// Wraps a single consumer's `Cursor` via `Arc`. The producer reads this
 /// barrier to check how far the consumer has progressed. Since there's only
 /// one consumer, `get_after` is a single relaxed atomic load.
 pub struct UniConsumerBarrier {
@@ -58,7 +58,7 @@ pub struct UniConsumerBarrier {
 
 /// Consumer barrier for multiple independent consumers.
 ///
-/// Wraps the [`Cursor`] of every consumer in the group. The producer reads
+/// Wraps the `Cursor` of every consumer in the group. The producer reads
 /// this barrier to find the **slowest** consumer — because it can only
 /// overwrite a slot once all consumers have finished reading it.
 ///

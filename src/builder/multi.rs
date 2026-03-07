@@ -17,7 +17,12 @@ use crate::{
 
 use super::{Builder, BuilderContext, MC, NC, SC};
 
-/// First step in building a Disruptor with a [MultiProducer].
+/// Typestate builder for [`MultiProducer`].
+///
+/// Same typestate pattern as [`UPBuilder`](super::uni::UPBuilder) but for multi-producer.
+/// `State` tracks how many consumers have been added ([`NC`] -> [`SC`] -> [`MC`]).
+/// `B` is the barrier type for the current consumer group's dependency.
+/// Built via [`build_multi_producer_unchecked`](super::build_multi_producer_unchecked).
 pub struct MPBuilder<State, E, W, B> {
     state: PhantomData<State>,
     context: BuilderContext<E, W>,
