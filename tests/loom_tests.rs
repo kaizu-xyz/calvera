@@ -7,8 +7,8 @@
 //!
 //! Run with: `RUSTFLAGS="--cfg loom" cargo test --test loom_tests --release`
 
-use calvera::loom_api::{Barrier, Cursor, NONE, ProducerBarrier, RingBuffer};
 use calvera::UniProducerBarrier;
+use calvera::loom_api::{Barrier, Cursor, NONE, ProducerBarrier, RingBuffer};
 use loom::sync::Arc;
 use loom::sync::atomic::{AtomicI64, Ordering, fence};
 
